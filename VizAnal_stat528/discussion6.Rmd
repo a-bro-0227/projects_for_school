@@ -1,0 +1,83 @@
+---
+title: "Discussion 6"
+author: "Alex Brown"
+date: "October 7, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Discussion 6
+
+**Read the papers "Color coding" and "Mapping quantitative data to color" by Nils Gehrenborg and Band Wong published in Nature Methods in August 2010 and 2012. In class, we have started to talk about ggplot2.**
+
+**Answer the following question:**
+
+**a) By default, how does ggplot2 handle color mapping of quantitative and qualitative variables? Give an example.**
+
+To investigate how `ggplot2` handles color mapping of qualitative data, I used the `iris` dataset and created the below 'qual_default' graph. This small example shows how `ggplot2` seems to use colors that are discernible from one another but do not stand out from one another. The colors presented in the 'qual_default' graph leaves me to believe `ggplot2` uses different hue's but sticks to relatively the same lightness and saturation. The strategy which `ggplot2` uses seems to be consistent with good strategies noted by Bang Wong in his 'Color Coding' paper. Wong notes that drawing attention to a certain variable or variables can introduce unwanted bias. I think `ggplot2`'s default colors do a good job of switching color hues and not using different saturation and lightness which would cause some colors to stick out and draw attention to a certain category over the other. For example, red is a color that can easily stick out from the rest of colors and can draw a viewer's attention. However, the red used for 'setosa' does not stick out more than the other colors.
+
+```{r qual graph, echo=TRUE}
+#====package bank====
+library(ggplot2) #load ggplot2
+library(RColorBrewer)
+
+qual <- ggplot(data = iris, aes(x = Sepal.Length, y = Sepal.Width, colour = Species)) +
+  geom_point()
+
+qual + ggtitle("qual_default")
+
+```
+
+To investigate how `ggplot2` handles color mapping of quantitative data, I used the `faithfuld` dataset and created the `quant_default` graph. When `geom_tile` is applied to `waiting` and `eruptions` on the x and y axes and density as the fill, it gives a great example of how color is applied to quantity and how insight can be drawn when color is applied appropriately. You can easily see, the darker the blue, the lower the `desity` level for that combination of `waiting` and `eruptions` and the lighter the blue, the higher the `desity` level for that intersection. This seems to, again, follow the strategies noted by Bang Wong in his 'Mapping Quantitative Data to Color' paper. However, the rules are backwards from what I expected. From what I can tell, the `ggplot2` package is scaling the color of blue at roughly 10% lightness for high numbers and 90% black for low numbers and mimics Wong's proposed strategies. From the below graph, you can see that there are intersections which of `waiting` and `eruptions` where higher `density` is likely.
+
+```{r quant graph, echo=TRUE}
+
+quant <- ggplot(faithfuld, aes(waiting, eruptions, fill = density)) +
+  geom_tile()
+
+
+quant + ggtitle("quant_default")
+
+```
+
+**b) ColorBrewer (http://colorbrewer2.org/) gives different choices of color schemes. Describe the difference between a gradient, a divergent and a qualitative scheme. Give data examples for each one of these schemes.**
+
+A sequential or gradient scheme is for ordered or quantitative data with values from low to high. This type of scheme produces every possible color option throughout a range of colors. Light colors represent low data points and darker colors represent high data points. 
+
+```{r gradient, echo=TRUE}
+quant +
+  ggtitle("quant_color") +
+  scale_fill_distiller(palette = "Purples")
+
+```
+
+A diverging scheme uses a critical mid-range value and extreme values at both end of a data range. The critical mid-range value (for example 0 or an average) is represented by light colors for mid-range data, while low and high values are represented by contrasting hues. For each hue or color, saturation is used to represent relative scale. The less saturated, the closer to zero and the more saturated, the closer to the most extreme value.
+
+*The below example uses all positive numbers with and possibly the median or mean as the critibal value, but the same color effect would apply to a fill on a vector with positive and negative values*
+
+```{r diverging, echo=TRUE}
+
+quant +
+  ggtitle("quant_diverg") + 
+  scale_fill_distiller(palette = "PRGn")
+
+```
+
+
+A qualitative scheme do not represent magnitude differences and are mostly used for nominal or categorical data. The colors are designed to give maximum visual difference between classes.
+
+*The below example is from my example (a).*
+
+```{r qualitative, echo=TRUE}
+
+qual +
+  ggtitle("qual_color") +
+  scale_colour_brewer(palette = "Dark2")
+  
+
+```
+
+

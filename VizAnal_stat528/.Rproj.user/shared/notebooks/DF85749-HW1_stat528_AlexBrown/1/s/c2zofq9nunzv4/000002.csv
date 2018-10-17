@@ -1,0 +1,8 @@
+"0","table(mpg$model)[which(table(mpg$model) == max(table(mpg$model)))]
+"
+"1","caravan 2wd "
+"1","
+"
+"1","         11 "
+"1","
+"

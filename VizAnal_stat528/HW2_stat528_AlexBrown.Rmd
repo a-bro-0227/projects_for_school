@@ -1,0 +1,240 @@
+---
+title: "Homework 2 "
+author: "STAT 528"
+date: 'Due: Saturday, Oct 14, 11:59pm'
+output: [html_document, word_document]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Submission
+Your  homework submission should include the markdown file and the corresponding knitted document (your choice of html, pdf or Word).
+
+
+## Questions
+1. For this exercise we will use the data set `ChickWeight`. You need to load the data in R using `data(ChickWeight)`.
+The `ChickWeight` data frame has 578 rows and 4 columns from an experiment on the effect of diet on early growth of chicks. Use `?ChickWeight` to get more information on every one of the variables.
+
+***Here, we will load the `ChickWeight` dataset and then open up the `ChickWeight` documentation. In addition, we will take a peak at the data.***
+
+***To look at the data and since the following quesions deal with `dplyr` and `ggplot2` we will load the `tidyverse` package and use `glimse` to get the number of observations, number of columns, column names, column types or classes, and a sample of the data.***
+
+```{r load data, echo=TRUE}
+
+#====library bank====
+suppressPackageStartupMessages(library(tidyverse))
+
+data(ChickWeight)
+
+?ChickWeight
+
+glimpse(ChickWeight)
+
+```
+
+a. Each chick should have twelve weight measurements. Use the `dplyr` package to identify how many chicks have a complete set of weight measurements and how many measurements there are in the incomplete cases. Extract a subset of the data for all chicks with complete information and name the data set `complete`. (Hint: you might want to use `mutate` to introduce a helper variable consisting of the number of observations)  
+
+***To find out how many complete and incomplete cases there are, we can `count` by the `Chick` identifier. This will aggregate the data, producing a new column `n` which is the number of observations that were taken for each `Chick`.***
+
+***From there we can add a column to note whether the count of observation is less than the desired 12 observations or not. We use `mutate` to add the column, which we will call `CompleteStatus`, and an `ifelse` statement to derive the value of the column.***
+
+***From there we will use `count` again on the new `CompleteStatus` column which tells how many complete and incomplete cases we have. This is represented by `nn` since it is the second `count` we have done in the query. I will wrap it in `data.frame` because I visually prefer that output over a `tibble` in small cases.***
+
+```{r complete vs incomplete, echo=TRUE}
+
+data.frame(ChickWeight %>%
+  count(Chick) %>%                          #count how many observations of each `Chick` there were
+  mutate(CompleteStatus = ifelse(n < 12,    #if there were less than 12 then note as
+                           "Incomplete",    #Incomplete, otherwise note as
+                           "Complete")) %>% #Complete
+  count(CompleteStatus))                    #then count how many complete and incomplete observation there are
+
+```
+
+***To subset the `ChickWeight` dataframe and create a new dataframe called `complete`, we can use `add_count` to add a column `n` to our dataframe based on the number of items in each `Chick` group. It is the same idea as `count` used before, but it simply adds a column to the exsisting dataframe which tells you the aggreated number for that group. A good reference for `add_count` is is found here: [https://dplyr.tidyverse.org/reference/tally.html](https://dplyr.tidyverse.org/reference/tally.html).***
+
+***With the column created we can subset the dataframe using `filter` to the desired 12 observations for each `Chick`. The number of observations is no longer needed, so we will then drop that column using `select` and a minus sign in front of the column we want to drop, `n`.***
+
+```{r complete subset, echo=TRUE}
+
+complete <- ChickWeight %>%
+  add_count(Chick) %>%
+  filter(n == 12) %>%
+  select(-n)                 #remove count column as it is no longer needed
+
+```
+
+b. In the complete data set introduce a new variable that measures the current weight difference compared to day 0. Name this variable `weightgain`. (Hint: same idea as above, use `mutate` to introduce a variable for weight at day 0)  
+
+***To indroduce the the new variable `weightgain` which shows the difference in weight compared to day 0, we will need to extract the `weight` on day 0 using `filter` on the `Time` variable and then add it back into the `complete` dataframe using `left_join`. This can all be done in one function by subsetting `Time` for day 0 on the `y` variable of the `left_join`.***
+
+***When we add the `origweight` variable to the `complete` dataset, we can use `mutate` to subtract `origweight` from the current `weight` variable and get the difference of weight compared to day 0. As noted, we name this variable `weightgain`.***
+
+```{r weight gain, echo=TRUE}
+
+complete <- complete %>%
+  left_join(y = complete %>%
+              filter(Time == 0) %>%                #subset `Time` on day 0
+              select(Chick, origweight = weight),  #select only needed columns so there will not be extra variables
+            by = "Chick") %>%                      #join by `Chick`
+  mutate(weightgain = weight - origweight) %>%     #subtrack `origweight` from `weight` to get `weightgain`
+  select(-origweight)                              #remove helper column so it can be run again
+
+```
+
+c. Using the `ggplot2` package create side-by-side boxplots of `weightgain` by `Diet` for day 21. Describe the relationship in 2-3 sentences. 
+Change the order of the categories in the `Diet` variable such that the boxplots are ordered by median `weightgain`.
+
+***To plot the `weightgain` for day 21, we first need to subset the `complete` dataset on `Time` for day 21 using `filter`. We then use `ggplot` with `geom_boxplot` to graph a box plot. We can set the `x` axis to `Diet` ordered by the median of `weightgain` by using the `reorder` funciton and setting `median` as the `FUN` portion of the `reorder` function.***
+
+***Since we used a function on the `x` axis, we will want to rename the `x` axis label by using `xlab`.***
+
+```{r boxplots, echo=TRUE}
+
+complete %>% filter(Time == 21) %>%                #subset dataframe
+  ggplot(aes(x = reorder(Diet, weightgain,         #reorder `Diet` by
+                         FUN = median, na.rm = T), #the median of `weightgain`
+             y = weightgain)) +
+  geom_boxplot() +                                 #create a boxplot
+  xlab("Diet")                                     #relabel the x-axis
+
+```
+
+***The output of this graph tells us that a `Chick` on diet 3 is likely to gain more weight than a `Chick` on another diet. Furthermore, deit 1 seemed to show the least amount of weight gain compared to other diets. It is also shown in this graph that `Chick`s on diet 4 seemed to have the most consistent weight gain.***
+
+d. Using the `ggplot2` package create a  plot with `Time` along the x axis and `weight` in the y axis. Facet by `Diet`. Use a point layer and also draw one line for each `Chick`. Color by `Diet`. Include the legend on the bottom (check `theme`).<br>
+Comment on something interesting about these data in  2-3 sentences. 
+
+***To produce a graph with `Time` along the x axis and `weight` in the y axis which has a point layer and one line for each `Chick`, as well as, a different color for each `Diet` we need to add a few important steps to our `ggplot` function.***
+
+***First, we can set `color` to `Diet` in the `aes` of the `ggplot` function to get a different color for each `Diet`.***
+
+***Next, `geom_line` will give us a line graph, but we need to call out in the `aes` that we want a different line for each `Chick`. We can do this by setting `group` to `Chick`. There is some good documentation at the following [link](https://ggplot2.tidyverse.org/reference/aes_group_order.html) about how `geom_line` tries to connect all the observations with a single line and how you can break out each category (in our case `Chick`) to a seperate line: [https://ggplot2.tidyverse.org/reference/aes_group_order.html](https://ggplot2.tidyverse.org/reference/aes_group_order.html).***
+
+***To add the point layer, we can add `geom_point` to our graph which will plot the underlying points that `geom_line` is following.***
+
+***In addition to adding a different color for each `Diet` type, we want to add a facet for each `Diet` type. To do this, we use `facet_wrap`. We can set the legend which notes what each color represents at the bottom of the graph by using `theme` and setting `legend.position` to "bottom".***
+
+```{r time series, echo=TRUE}
+
+complete %>% 
+  ggplot(aes(x = Time, y = weight,  #put `Time` on x axis, and `weight` on y axis
+             color = Diet,          #use a different color for each `Diet`
+             group = Chick)) +      #creat a different line for each `Chick`
+  geom_line() +                     #add a line layer
+  geom_point() +                    #add a point layer
+  facet_wrap( ~ Diet) +             #facet for each `Diet`
+  theme(legend.position = "bottom") #put the legend on the bottom
+
+```
+
+e. Select the `Chick` with the maximum weight at `Time` 21 for each of the diets. Redraw the previous plot with only these 4 chicks (and don't facet).<br>
+Compute average daily weights under each Diet and redraw the plot (using the same structure and aesthetics as before).<br>
+Comment on the results and compare all the visualizations. In your opinion which visualization presented in exercise 1 best describe this data set?
+
+***To get the `Chick` with the maximum weight at `Time` 21 for each `Diet`, we need can use `group_by` to group by `Diet`, and then `filter` where the `weight` is equal to the `max` weight for each `Diet`. In addition, we need to `filter` where `Time` is equal 21 in order to 1.) ensure we don't get a `Chick` who had a higher `weight` than the `Chick` with the highest `weight` on day 21 and 2.) account for any cases were there is more than one `Chick` who had the max weight on day 21.***
+
+***We want to use `filter` instead of `summarize` because `filter` will give us the entire row, where as, `summarize` only gives us columns we used in the function. It is importatnt we have the `Chick` column because we will need to tie the `Chick` identifier back into the actual table to get all the observations of the  `Chick`s with the maxiumn `weight` at `Time` 21.***
+
+***The following reference has multiple ways to do achive the goal of extracting the rows which contain the maximmum by group, but we will stick with the `dplyr` version: [https://stackoverflow.com/questions/24237399/how-to-select-the-rows-with-maximum-values-in-each-group-with-dplyr](https://stackoverflow.com/questions/24237399/how-to-select-the-rows-with-maximum-values-in-each-group-with-dplyr)***
+
+***First, we will just look at the rows with the maximum `weight` for each `Diet` to ensure our function is working correctly.***
+
+
+```{r find max chick, echo=TRUE}
+
+data.frame(complete %>%
+  group_by(Diet) %>%
+  filter(weight == max(weight),
+         Time == 21))
+
+```
+
+***Next we will use `inner_join` on the `complete` dataset and the function used to subset above to get a dataset which contains only the observations of the `Chick` with the maximum `weight` for each `Diet` at `Time` 21. In otherwords, This will leave use with only (all) the observations of the `Chick` who had the maximum `weight` at `Time` 21 for each `Diet`. Then we will use the same process as above for graphing, except we will not use `facet_wrap` because we no longer want seperate graphs for each `Diet`.***
+
+```{r max chicks, echo=TRUE}
+complete %>%
+  inner_join(y = complete %>%
+               group_by(Diet) %>%
+               filter(weight == max(weight),
+                      Time == 21) %>%
+               select(Diet, Chick),          #we only need the `Chick` column
+             by = c("Diet", "Chick")) %>%    #but I kept and joined on `Diet` as well
+                                             #to ensure there were no duplicate `Chick` id's
+                                             #in a different diet
+  ggplot(aes(x = Time, y = weight,  #Time on x axis, weight on y axis
+             color = Diet,          #different color for each Diet
+             group = Chick)) +      #different line for each Chick
+  geom_point() +                    #point layer
+  geom_line() +                     #line layer
+  theme(legend.position = "bottom") #put legend on the bottom
+```
+
+***To get the average daily `weight` under each `Diet` we will use the same method of thinking as before, except this time, we do not need to know the `Chick` identifier. Since we do not need to know the `Chick` identifier, we can use `summarize` instead of `filter`. Again, we will use the same process as before for graphing, except this time, in a addition to removing the `facet_wrap`, we will also remove the aesthetic `group` because the data is aggregated and we no longer have a `Chick` identifier.***
+
+```{r average weights, echo=TRUE}
+
+complete %>%
+  group_by(Diet, Time) %>%
+  summarize(avgWeight = mean(weight)) %>%
+  ggplot(aes(x = Time, y = avgWeight,  #Time on x axis, weight on y axis
+             color = Diet)) +          #different color for each Diet
+  geom_point() +                       #point layer
+  geom_line() +                        #line layer
+  theme(legend.position = "bottom")    #put legend on the bottom
+
+```
+
+2. Create an R function that fits a simple linear regression and plots residuals vs fitted values using `ggplot2` and includes a horizontal line in zero. The arguments for this function should be `x` (explanatory variable), `y` (response variable) and `col` for the horizontal line color. The x label should be Fitted Value and the y label should be Residuals. <br>
+Hint: when you use ggplot2 for the plotting, you will have to make a data frame from the fitted values and residuals. ggplot2 does not work with vector data outside of a data frame. <br>
+Show  how your function works with `data(LifeCycleSavings)`, use `x = sr` `y = ddpi` and `col = red`.
+
+***To write a function, it can be useful to first do what you are trying to do outside of the function. We will need to use `lm` inside of `ggplot` to get the linear regression model along with the residuals and fitted values we want to plot. By using the function `lm` as our "data" inside of the `ggplot` funciton we can use `x = .fitted` and `y = .resid` inside of our `aes`. From there, it is standard `ggplot` operations. We use `geom_point` to produce a scatter plot, we use `geom_hline` to implement our horizontal line, and then `xlab` and `ylab` to relabel our axes. The `geom_hline` will be where we change the horizontal line color. Since we will have an argument in the function dedicated to changing the color of the horizontal line, we will set it to "blue" in the development of the function and also in the actual function to prove that input to our function works.***
+
+```{r function test, echo=TRUE}
+
+data(LifeCycleSavings)                             #load the `LifeCycleSavings` dataframe
+ggplot(lm(sr ~ ddpi, data = LifeCycleSavings),     #fit the model
+       aes(x = .fitted, y = .resid)) +  
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed",
+             color = "blue", size = 1) +
+  xlab("Fitted Value") + ylab("Residuals")
+
+```
+
+***We now know we have the right idea. To implement this to a function with three arugments, `x`,`y`, and `col` we will will need to create a dataframe from `x` and `y` inputs. We can then simply change our experiemnt from above to contain the inputs from the function arguments. Again, we will set our horzontal line default to "blue" so we can ensure the color change works.***
+
+```{r function, echo=TRUE}
+FitVsResid <- function(x, y, col = "blue") {
+  require(ggplot2, warn.conflicts = F)
+  
+  data <- data.frame(x = x, y = y)
+  
+  ggplot(lm(x ~ y, data = data),                   #fit the model
+       aes(x = .fitted, y = .resid)) +  
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed",  #horizontal line
+             color = col, size = 1) +              #color arguemnt
+  xlab("Fitted Value") + ylab("Residuals")         #rename axes
+  
+}
+
+#test function
+FitVsResid(x = LifeCycleSavings$sr,
+           y = LifeCycleSavings$ddpi,
+           col = "red")
+
+```
+
+***We can see that the functoin, including the line color, works.***
+
+***Here is a few good sources I used for developing this function:***
+
+https://drsimonj.svbtle.com/visualising-residuals <br>
+https://community.rstudio.com/t/ggplot-makes-residual-plots/738 <br>
+http://katiejolly.io/blog/2018-02-05/aes-string
+

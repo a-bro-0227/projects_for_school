@@ -1,0 +1,219 @@
+---
+title: "Homework 1"
+author: "Alex Brown - STAT 528"
+date: 'Due: Saturday, Sep 30, 11:59PM'
+output: [html_document, word_document, pdf_document]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Exercises 
+Your  homework submission should include the markdown file and the corresponding knitted document (your choice of html, pdf or Word).
+
+In this homework we will use `mpg` data set, you can access the data by loading `ggplot2`. 
+This data includes information about the fuel economy of popular car models
+in 1999 and 2008, collected by the US Environmental Protection Agency.
+
+**As noted, we are using the `mpg` data set found in `ggplot2` I will need to load the package. In addition, I like to use `dplyr` and keep all my packages in one spot:
+
+```{r load packages, echo=TRUE}
+library(ggplot2)
+library(dplyr, warn.conflicts = F) #suppresses dplyr load message
+```
+
+Most exercises are from the ggplot2 book section 2.2.1. You might find it helpful for the homework to read through this section besides watching the class videos.
+
+1.  List five functions that you could use to get more information about the
+mpg dataset.
+
+I have found some functions can be affected downstream in a `r` code by the `class` of a dataframe (whether it is dataframe, tibble, etc.). It can sometimes be a good idea to check the class of the dataframe:
+
+```{r class, echo=TRUE}
+class(mpg)
+```
+
+In this case, We can see that is is a `tbl_df` or `tibble`. As noted by [Kirill Müller](https://www.rdocumentation.org/packages/tibble/versions/1.0/topics/tbl_df), the main advantage to using a `tbl_df` over a regular data frame is the printing. `tbl` objects only print a few rows and all the columns that fit on one screen, describing the rest of it as text. This means, just printing the data set will give us a few rows and columns of data and an idea about what is in our dataframe:
+
+```{r print tbl_df, echo=TRUE}
+mpg
+```
+
+Another way to do this would be to use`head` or `tail` to view the end of the dataframe:
+
+```{r head, echo=TRUE}
+head(mpg)
+tail(mpg)
+```
+
+One thing nice about `tibbles` is they will not automatically change your variables, for instance, strings will not automatically be converted to factors. However, it is still a good idea to check to make sure there are no unexpected variable types. It's very possible to have a variable that you expected to be numeric end up as a character because there are `NA`'s coded hard coded as `NULL` or something simliar. To check for unexepected variables, we use `str` or `glimse`. These functions will also tell you the `class` of the dataframe and give you a sample of values in each column:
+
+```{r str, echo=TRUE}
+str(mpg)
+glimpse(mpg)
+```
+
+Another thing that `str` does is give you the dimensions of your dataframe and the column names of the dataframe. To see only those things, you can use `dim` and `colnames` (or `names`) respectively:
+
+```{r dim and cols, echo=TRUE}
+dim(mpg)
+colnames(mpg)
+```
+
+Now that we know the structure of the dataframe and looked at some small samples, we can get some aggregate info with `summary`:
+
+```{r summary, echo=TRUE}
+summary(mpg)
+```
+
+
+
+2. Using the `ggplot2` package create a scatterplot of `hwy` and `cty` and describe the relationship. Why are there so few points visible? Use a geom that makes all points visible in the scatterplot.
+ 
+To create a scatter plot of `cty` and `hwy` we use the `ggplot` formula with the addition of `geom_point`:
+
+```{r scatterplot1, echo=TRUE}
+ggplot(data = mpg, aes(x = hwy, y = cty)) + geom_point()
+```
+
+You can see from this graph that there is a positive relationship between `cty` mpg and `hwy` mpg. This expected, if a car performace is better on the highway, it's likely to perform better in the city, gas mileage wise.
+We can see what the actual correlation is using the function`cor` and then use `lm` to get the linear equation:
+
+```{r regression formula, echo=TRUE}
+cor(mpg$cty, mpg$hwy) #compute pearson correlation
+lm(cty ~ hwy, mpg)    #derive linear equation
+```
+
+The correlation is almost one! While that does not always mean causation, I think it's safe to say a higher highway mileage has an effect on city mileage. To even further analyze this, we can add a regression line with geom_smooth:
+
+```{r regression line, echo=TRUE}
+ggplot(data = mpg, aes(x = hwy, y = cty)) + geom_point() + geom_smooth(method = lm, formula = y ~ x)
+```
+
+We can see there is much less than 200+ dots on our graph. It is not unexpected that there are overlapping dots for car mileage. This is probably because car manufactuers average and round (give or take) their gas milage for marketing purposes. I can't reference it, but I'm pretty sure I have read somewhere that stores set their prices to be subconciously pleasing and more likely to create a purchse. For example, 99.99 dollars in stead of an even 100 dollars or even 10.57 in stead of 10.50. It would not suprise me if gas milage is treated the same way. It's likely they put 18/mpg city, 20/mpg highway instead of 17.56/mpg city and 21.15/mpg for gas mileage. I'm sure there are exensive studies done on how cars sell better with certain gas milage instead of others, just like there are extensive studies of visualization like we are learning about in this course (maybe even more so) but that is way outside the scope of this question.
+
+Anyways, to randomly scatter the dots a little off center from where they actually are, we can use `geom_jitter`. I have added a linear regression line for easy comparing that they are the samething:
+
+```{r scatterplot2, echo=TRUE}
+ggplot(data = mpg, aes(x = hwy, y = cty)) + geom_jitter() + geom_smooth(method = lm)
+```
+
+
+3. Apart from the US, most countries use fuel consumption (fuel consumed
+over fixed distance) rather than fuel economy (distance traveled with fixed
+amount of fuel). How could you convert `cty` and `hwy` into the European
+standard of liter/100 km?
+
+According to [google](https://www.google.com/search?q=how+to+convert+mpg+to+l%2F100km&oq=how+to+convert+mpg+to+&aqs=chrome.5.0j69i57j0l4.9759j0j7&sourceid=chrome&ie=UTF-8), one US Mile per Gallon is equal to 235.215 Liters per 100 Kilometers. To convert mpg to l/100 km we need to take 235.215 divided by `x` mpg. That is: $l/100 km = 235.215/xmpg$. As with any problem and particularly programming problems, there are multiple ways to skin-a-cat. To get a fast print out, we can just divided the 235.215 by the respective columns. I will use `head` to pring out the first 6 rows and save space: 
+
+```{r lkm convert1, echo=TRUE}
+head(235.215/mpg$cty)
+head(235.215/mpg$hwy)
+```
+
+To do the same thing over both the columns (or if you had more columns!), you could also use `sapply` with an embedded `function` to convert the columns. I use `sapply` instead of `apply` because it will automaticly convert it to a nice dataframe if it can:
+```{r apply, echo=TRUE}
+sapply(X = mpg %>% select(cty, hwy),
+       function(x) 235.215/x) %>% 
+  head()
+```
+
+
+Since I am converting two columns and need them for the next questions, I will save them to a variable for later. I will convert them using`mutate` from the `dplyr` package:
+
+```{r klm convert2, echo=TRUE}
+lkm <- mpg %>%
+  mutate(cty = 235.215/cty,
+         hwy = 235.215/hwy)
+lkm
+```
+
+4.  Which model is the most economical based on `cty`? 
+Which model consumes most fuel using the  European standard for `cty`?
+
+To get the model (and a few other relevent fields) we will use `dplyr` and `select` the desired columns and then use `filter` for `cty` equals the `max` of `cty` on each dataset. We will only want the unique, so we will want to wrap the entire funtion in `unique`:
+```{r max, echo=TRUE}
+unique(mpg %>% select(manufacturer, model, year, cty, hwy) %>% filter(cty == max(cty)))
+unique(lkm %>% select(manufacturer, model, year, cty, hwy) %>% filter(cty == max(cty)))
+```
+
+
+5. Which manufacturer has the most models in this dataset? Which model
+has the most variations? ( `table` and `apply` functions can be used to solve this problem)
+
+To see which `manufacturer` has the most models by using the `table` function, we fist get a data set or table by simply using the`table` function on `manufacturer`. We can then grab all the indices from that table that are equal to the `max` of the table count with the `which` function. We could simply sort and use`[1]` in for the index, but what if there are more than one manufacturer that has the most models? That why it is important to include the `which` function:
+```{r table manufacturer, echo=TRUE}
+table(mpg$manufacturer)[which(table(mpg$manufacturer) == max(table(mpg$manufacturer)))]
+```
+
+This can also be donw with `count` and `tally` filtering to what equals the `max` of the table count like in the previous example:
+
+```{r tally and count manufacturer, echo=TRUE}
+mpg %>% 
+  group_by(manufacturer) %>% #first we need `group_by` for tally
+  tally() %>%
+  filter(n == max(n))
+
+mpg %>% 
+  count(manufacturer) %>%    #which count, you do not need `group_by`
+  filter(n == max(n))
+```
+
+To see which model as the most variations, we can use the same methods except on the `model` column.
+
+```{r table model, echo=TRUE}
+table(mpg$model)[which(table(mpg$model) == max(table(mpg$model)))]
+
+mpg %>% 
+  group_by(model) %>% #first we need `group_by` for tally
+  tally() %>%
+  filter(n == max(n))
+
+mpg %>% 
+  count(model) %>%    #which count, you do not need `group_by`
+  filter(n == max(n))
+```
+
+This question indicates that there are multiple of the same models with different types of features. We can add a unique function to our original model analysis and see if the answer changes. For simplicy, we will just store a new dataframe called `uniq_model`:
+
+```{r unique model, echo=TRUE}
+
+uniq_model <- unique(mpg %>% select(manufacturer, model))
+
+table(uniq_model$manufacturer)[which(table(uniq_model$manufacturer) == max(table(uniq_model$manufacturer)))]
+
+uniq_model %>% 
+  group_by(manufacturer) %>% #first we need `group_by` for tally
+  tally() %>%
+  filter(n == max(n))
+
+uniq_model %>% 
+  count(manufacturer) %>%    #which count, you do not need `group_by`
+  filter(n == max(n))
+
+```
+
+6. Using the `ggplot2` package create side-by-side boxplots of `cty` by `class`. Describe the relationship in 2-3 sentences. 
+Change the label for the y-axis to 'city miles per gallon' (see ```?ylab```).  
+Change the order of the categories in the `class` variable such that the boxplots are ordered from least efficient to most efficient as measured by `cty`.
+
+To re-order a box plot by feul efficiency with `ggplot`, we need to add `geom_boxplot` and then `ylab` to relabel `y` axis. In addition, we need to reorder the classes by the `median` of `cty` using the `reorder` function:
+```{r boxplot median, echo=TRUE}
+ggplot(mpg, aes(x = reorder(class, cty, FUN = median), #reorders 'class' by the 'median' of 'cty'
+                y = cty)) +
+  geom_boxplot() +                                     #create a bloxplot
+  xlab("class of car by median") +                     #relabel `x` axis
+  ylab("city miles per gallon")                        #relabel 'y' axis
+```
+
+We can see that generally, the bigger the car, the lower the mpg. This makes sense because the bigger the car, the more weight you will have to move when accelerating. A couple things that supprise me, however, is that 1.) the 2 seaters have a worse mpg than a minivan or midsize class car. I guess it is because these are usually made to be flashy and fast which makes them have a really big engine and sucks up gas quicker 2.) the subcompact cars have a lower median mpg than compact cars. However, it looks like there are more sub compact cars that have better mpg than compact cars. We can see that if we organize by `mean` instead of `median`, in gernal, subcompact cars have a better mpg:
+
+```{r boxplot mean, echo=TRUE}
+ggplot(mpg, aes(x = reorder(class, cty, FUN = mean), #reorders 'class' by the 'median' of 'cty'
+                y = cty)) +
+  geom_boxplot() +                                     #create a bloxplot
+  xlab("class of car by mean") +                      #relabel `x` axis
+  ylab("city miles per gallon")                        #relabel 'y' axis
+```

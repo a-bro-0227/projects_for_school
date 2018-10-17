@@ -1,0 +1,24 @@
+---
+title: "ClassNotes"
+author: "Alex Brown"
+date: "September 22, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## ISU - Data Visualization Class Notes
+
+```{r class 6d, echo=T}
+x <- c(4, 1, 3, 9)
+y <- c(1, 2, 3, 5)
+d <- sqrt(sum((x - y)^2))
+
+z <- c(1,2,3,2,1,2,2,3,2,2,2,1,1,3,2,1)
+labels <- c('low', 'medium', 'high')
+labels[z]
+```
+
+
