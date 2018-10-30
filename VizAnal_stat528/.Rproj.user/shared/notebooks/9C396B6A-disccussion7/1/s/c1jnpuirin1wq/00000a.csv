@@ -1,0 +1,15 @@
+"0","isu_bball <- isu_bball %>%
+  filter(`#` != """") %>%                                  #filter out aggregate rows
+  select(Player, MIN,                                         #remove the number variable and 
+            grep(""%"", colnames(isu_bball),               #any columns with `%` in the name
+                 value = T)) %>%
+  mutate(sapply(grep(""%"", colnames(isu_bball),               #any columns with `%` in the name
+                 value = T), #set necissary fields
+                            as.numeric))       #to numeric)
+"
+"2","NAs introduced by coercion"
+"2","NAs introduced by coercion"
+"2","NAs introduced by coercion"
+"2","Error in mutate_impl(.data, dots) : 
+  Column `sapply(grep(""%"", colnames(isu_bball), value = T), as.numeric)` must be length 10 (the number of rows) or one, not 3
+"

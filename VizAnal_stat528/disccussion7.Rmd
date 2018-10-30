@@ -1,0 +1,80 @@
+---
+title: "Discussion 7"
+author: "Alex Brown"
+date: "October 22, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Read the papers "Heat maps" and "Into the third dimension" by Nils Gehrenborg and Band Wong published in Nature Methods in March and September 2012.**
+
+**Answer the following question:**
+
+**a) based on the reading, what are the most important things to consider when drawing heatmaps. After reading the papers, would you recommend to draw a heatmap? Describe the situation in an example.**
+
+The most important things to consider when drawing a `heatmap`, according to Gehrenborg and Wong, are color coding and re-ordering of rows and columns. Translating numbers to colors can result in data being perceived incorrectly depending on the neighboring cells. If we are trying to represent the difference of a value from the median or critical value (like 0 or 32 degrees), then we want to use a "divergent gradient color" with three separate hues. This strategy gives emphasis to low and high ends of a range. The other strategy noted when coding a variable to color by Gehrenborg and Wong is to set a single hue or color with a 10% to 90% lightness which will emphasize one extreme. When colors are given an appropriate color scale, the next step is to cluster the data into groups and arrange variables according to similarity.
+
+I think a `heatmap` is well suited to represent data with a lot of quantitative observations which can easily be grouped. For example, if you look at sports data, there is a lot of statistics associated with each player or team or even play. With a lot of the data, there are columns for a player or team and then each subsequent column matches relevant statistics. With a `heatmap`, you can put player on the `y-axis` and then the statistic type on the `x-axis`. This will lead to colors which pop out and inform a coach (or fan) that player `x` is better than everyone else on the team at `y`.
+
+**b) Using ggplot2 draw a heatmap (use the tile geom for this). Include your data and code, describe your plot and discuss your plot critically.**
+
+In order to draw a `heatmap` I will load `tidyverse` which loads `ggplot2`. In addition, it will load `dplyr` and `tidyr` for data manipulation. I will also load `Rcolorbrewer` for manipulating my `heatmap`. For my `heatmap` example, I will use basketball statistics from the ISU website. To scrape the data off the website, I will load `rvest`.
+
+```{r library bank, echo=TRUE}
+#====library bank====
+suppressPackageStartupMessages(library(tidyverse, warn.conflicts = F))
+library(RColorBrewer)
+suppressPackageStartupMessages(library(rvest, warn.conflicts = F))
+```
+
+The data for my graph is located here: [https://cyclones.com/cumestats.aspx?path=mbball](https://cyclones.com/cumestats.aspx?path=mbball) in the "Individual" tab.
+
+For more info on scraping data, you can go here: [https://blog.rstudio.com/2014/11/24/rvest-easy-web-scraping-with-r/](https://blog.rstudio.com/2014/11/24/rvest-easy-web-scraping-with-r/) and plenty more places on the internet.
+
+First, we will read all the info from the webpage and save it as a variable `webpage`. Next, we will extract the tables from the `webpage` and save it as `tbls_ls`. This gives us 2 tables from the webpage. We want the second table, which is the overall stats of the team. We will save this table as `isu_bball` and convert it to a data frame using `data.frame`.
+
+```{r webpage table, echo=TRUE}
+webpage <- read_html("https://cyclones.com/cumestats.aspx?path=mbball")
+
+tbls_ls <- webpage %>%
+        html_nodes("table") %>%
+        .[3:4] %>%
+        html_table(fill = TRUE)
+
+isu_bball <- data.frame(tbls_ls[2])
+```
+
+I will need to clean the table up a little bit and weed the data set down to important variables. First, the column headers are in the first row which makes everything a `character`. I will set the headers as the first row and then remove the first row. I will use the player's `#` to filter out the aggregated rows/values and then `select` `Player`, `MIN`, and anything with a `%` in the name. Since all the stats we `characters` from the issue with the column headers being in the first row, I will convert all the variables with `%` in the name to `numeric` with `mutate_at`. After that, I will clean up the `Player` names from redundant information and covert `MIN` to be on the same scale as the other percents by dividing by 1000 (close to the max number of minutes played by a player) in the `mutate` section.
+
+```{r clean table, echo=TRUE}
+colnames(isu_bball) <- isu_bball[1, ]  #set headers to first row
+isu_bball <- isu_bball[-1, ]           #remove first row
+
+isu_bball <- isu_bball %>%
+  filter(`#` != "") %>%                                            #filter out aggregate rows
+  select(Player, MIN,                                              #select `Player` and `MIN` and 
+            grep("%", colnames(isu_bball),                         #any columns with `%` in the name
+                 value = T)) %>%
+  mutate_at(.funs = as.numeric,                                    #set to numeric
+            .vars = grep("%", colnames(isu_bball), value = T)) %>% #all columns with `%` in the name
+  mutate(Player = substr(gsub(".*\\d", "", Player), 2,   #clean players name
+                         nchar(gsub(".*\\d", "", Player))),
+         MIN = as.numeric(MIN)/1000)
+
+```
+
+From there, I `gather` all the values into one column with another column which indicates what type of number or statistic it is. It will also contain a column to indicate which player it is associated with. This will give me three columns to plot. I can put `Player` on the y-axis, what `Stat` it is on the x-axis, and then use the value to fill with a gradient scheme.
+
+```{r plot, echo=TRUE}
+isu_bball <- isu_bball %>%
+  gather(key = Stat, value = Value, -Player)
+
+isu_bball %>%
+  ggplot(aes(x = Stat, y = Player, fill = Value)) +
+  geom_tile() + scale_fill_gradient(low = "white", high = "steelblue")
+```
+
+The plot gives us players names on the y-axis and then stat type on the x-axis. I used percentages because I wanted to see how well player did in comparison to how much they played. We can see that `MIN` or minutes played seems to be somewhat correlation with how well you do on other stats (for the most part). However, there are some players who are on the lower end of the time played, but have darker colors for other stats. Something like this could surface a player who is not played enough, or is played to much.

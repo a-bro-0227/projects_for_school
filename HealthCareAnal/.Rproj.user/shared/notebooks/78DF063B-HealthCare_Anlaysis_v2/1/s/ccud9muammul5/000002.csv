@@ -1,0 +1,4 @@
+"0","#====connect to database===="
+"0","access_database <- paste0(""F:/School/Tippie_Business Analytics/Health Care Analytics"", ""/openmrs.accdb"") #database locaction"
+"0","openmrs <- odbcDriverConnect(paste0(""Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ="",            #connect to"
+"0","                                    access_database))                                                    #openmrs database"

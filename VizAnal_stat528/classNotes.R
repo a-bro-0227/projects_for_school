@@ -313,7 +313,6 @@ hdata %>% filter(!is.na(happy), happy != "DK", happy != "IAP") %>%
   summarise(perc = n()/mean(total)*100) %>%
   ggplot(aes(x = year, y = perc, colour = happy, shape = sex)) + geom_point() + geom_smooth(aes(group = happy))
 
-#######
 #how is happiness affected by ...
 # gender
 # age
@@ -327,6 +326,58 @@ hdata %>% filter(!is.na(happy), happy != "DK", happy != "IAP") %>%
 hdata %>% filter(!is.na(happy), happy != "DK", happy != "IAP") %>%
   ggplot(aes(x = finrela, fill = happy)) + geom_bar(position = "fill") +
   coord_flip()
+
+read.csv("fbi-crimes.csv")
+
+
+
+#====Lecture 10 Notes
+
+library(ggplot2)
+library(dplyr)
+library(RColorBrewer)
+
+states <- map_data("state")
+
+states %>% ggplot(aes(x = long, y = lat)) + geom_point()
+?map_data
+dim(states)
+head(states)
+states %>%
+  ggplot(aes(x = long, y = lat)) +
+  geom_path(aes(group = group)) +    #for boarders
+  geom_polygon(aes(group = group,    #for fill
+                   fill = lat)) +    #what to fill
+  ggthemes::theme_map()
+
+#try it
+counties <- map_data("county")
+counties %>%
+  ggplot(aes(x = long, y = lat)) +
+  geom_path(aes(group = group)) +    #for boarders
+  geom_polygon(aes(group = group,    #for fill
+                   fill = subregion == "story")) +    #what to fill
+  ggthemes::theme_map()
+
+library(ggwordcloud)
+counties %>% count(subregion) %>%
+  ggplot(aes(label = subregion, size = n)) + geom_text_wordcloud() + theme_minimal()
+
+
+fbi <- read.csv("F:/School/ISU/Visual Business Analytics/Data and Markdown files/Related Materials week 09/fbi-crimes.csv", stringsAsFactors = F)
+
+fbimap <- states %>%
+  inner_join(y = fbi %>%
+               filter(Year == 2015) %>%
+               mutate(State = tolower(State)),
+             by = c("region" = "State")) %>%
+  arrange(order)
+
+fbimap %>%
+  ggplot(aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = Vehicle.Theft/Population * 60000), colour = "grey50") +
+  scale_fill_gradient2(midpoint = median(fbimap$Vehicle.Theft/fbimap$Population * 60000)) +
+  ggthemes::theme_map()
 
 #====Quizzes====
 #quiz 5
@@ -455,3 +506,117 @@ f2(0,1:3)
 f2(10, c(9, 9, 5))
 happy$happy <- factor(happy$happy, levels = c("pretty happy", "very   happy","not too happy"))
 ggplot(data = na.omit(happy), aes (x = happy)) +geom_bar()
+
+
+
+
+iris.dat <- iris %>% 
+  mutate(ids = 1:n() ) %>% 
+  data.frame()
+
+
+iris.gather <- iris.dat %>% 
+  gather(variable, value, -Species, -ids) 
+
+
+
+x <- iris.gather %>%  
+  spread(variable,value)
+
+
+ggplot( data = mpg,  aes(displ, hwy) ) +  geom_point(  ) + labs(title="Engine displacement vs Highway") + theme_bw( ) + theme( axis.text.x  = element_text(angle = 45, size = 15, vjust = 0.5),  axis.text.y  = element_text(size = 15, vjust = 0.5), plot.title = element_text(face = "bold", size = 12) )
+mpg %>% 
+  group_by(manufacturer) %>% 
+  summarise(n = n( ) )
+
+mpg %>% 
+  filter(manufacturer %in% c("audi", "ford" ) )  %>% 
+  ggplot( aes(displ, hwy, color = manufacturer)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+
+
+
+iris %>% 
+  gather(Var.length, length, -starts_with("S") )
+x <- iris %>% 
+  gather(Var.length, length, contains( "." ) )
+
+
+mpg %>% 
+  select(starts_with("c") )
+
+
+ggplot(data = mpg, aes(x = cty, y = hwy,  colour = factor(cyl) ) ) + labs(color = "cly") + geom_point( ) + scale_colour_manual(values = c("red", "blue", "green", "black") )
+
+
+mpg %>% 
+  ggplot( aes(displ, hwy, color = factor(year) ) ) +  geom_point( ) +
+  labs(x = "Engine displacement, in litres", y =  "Highway mileage/gallon",      colour =  "Year", title = "Engine displacement vs Highway")
+
+mpg %>% 
+  group_by(manufacturer) %>% 
+  summarise(n = n( ) )
+
+
+ggplot( data = mpg,  aes(displ, hwy) ) +  geom_point(  ) + labs(title="Engine displacement vs Highway") + theme_bw( ) + theme( axis.text.x  = element_text(angle = 45, size = 15, vjust = 0.5),  axis.text.y  = element_text(size = 15, vjust = 0.5), plot.title = element_text(face = "bold", size = 12) )
+
+library(ggmap)
+uy <- get_map(location = "Uruguay",zoom = 6) +
+ggmap(uy,extent = "device")
+
+
+
+uy <- get_map(location = "Uruguay",zoom = 7)
+ggmap(uy, extent = "normal")
+
+library(lubridate)
+mdy('01012016') + days(0:365)
+
+collisions <- read.csv("https://data.cityofnewyork.us/api/views/h9gi-nx95/rows.csv")
+
+collisions <- collisions %>% filter(!is.na(LATITUDE), !is.na(LONGITUDE))
+
+map <- get_map("new york, ny", zoom = 11)
+
+reduced <- collisions %>% filter(VEHICLE.TYPE.CODE.2%in%c("MOTORCYCLE", "BICYCLE" ))
+
+wday(mdy('12242016'), label = TRUE, abbr = FALSE)
+
+
+
+
+county <- map_data("county")
+county %>% ggplot(aes(x = long, y = lat, group = group)) + geom_polygon(aes(fill=subregion=="jefferson")) + labs(fill = "Jefferson") + scale_fill_brewer(palette = "Dark2")
+
+
+
+economics %>% 
+  mutate(Quarter = quarter(date), Year = year(date) ) %>% 
+  filter(Year!=2015) %>%
+  group_by( Year, Quarter) %>% 
+  summarise(PCE = sum(pce)) %>% 
+  ggplot(aes(x = Year, y = PCE)) + geom_line()
+
+
+economics %>% 
+  mutate(Month = month(date), Year = year(date) ) %>% 
+  filter(Month == 12) %>%
+  ggplot(aes(x = Year, y = unemploy)) + geom_line()
+
+
+data(ChickWeight)
+ChickWeight %>% filter(Diet == 3 & weight == max(weight))
+
+ChickWeight %>% count(Chick) %>% filter(n == min(n))
+
+ChickWeight %>% filter(Diet == 1) %>% summarize(mean(weight))
+
+ChickWeight %>% filter(Diet == 3 & Time == 21) %>% summarize(mean(weight))
+ChickWeight %>% filter(weight > 300)
+ChickWeight %>% filter(Time == 10) %>% summarize(min(weight))
+min(ChickWeight$weight)
+
+
+

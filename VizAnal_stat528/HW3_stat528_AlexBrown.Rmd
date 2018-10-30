@@ -1,0 +1,163 @@
+---
+title: "Homework 3"
+author: "Stat 528"
+date: "Due November 18, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Your  homework submission should include the markdown file and the knitted document (your choice of html, pdf or Word).
+
+## Google Flu Trends data set
+
+1. For this exercise we will use the Google Flu Trends data set. 
+Each week begins on the Sunday (Pacific Time) indicated for the row.
+Data for the current week will be updated each day until Saturday (Pacific Time).
+The data are available in  http://www.google.org/flutrends, there are weekly flu information for different countries, but we will use US data set.
+
+You can save the data in an object name flu.us
+
+```{r}
+flu.us <-read.table("https://www.google.org/flutrends/about/data/flu/us/data.txt",
+sep = ",", header = TRUE, skip = 11)
+```
+
+**Below are the packages I will use throughout the assignment**
+
+```{r library bank, echo=TRUE}
+
+#====library bank====
+library(lubridate, warn.conflicts = F)
+library(dplyr, warn.conflicts = F)
+library(tidyr, warn.conflicts = F)
+library(ggplot2, warn.conflicts = F)
+library(scales)
+library(directlabels)
+library(RColorBrewer)
+```
+
+a. Each row in the dataset `flu.us` consists of the number of flu cases in a week. Using `lubridate` check that each week begins with Sunday.
+
+***To determine if all dates begin on Sunday, we will use `wday` from the `lubridate` package. Since there is not that many, we can review the `distict` days of the week from the `Date` column.***
+
+```{r week start, echo=TRUE}
+flu.us %>% mutate(DaysOfWeekCheck = wday(flu.us$Date, label = T, abbr = F)) %>% distinct(DaysOfWeekCheck)
+```
+
+***We can also see if it is `TRUE` or `False` that every variable equals `Sunday` we just create a temporary column and filter unique days of the week.***
+
+```{r, echo=TRUE}
+unique((flu.us %>% mutate(DaysOfWeekCheck = wday(flu.us$Date, label = T, abbr = F)))$DaysOfWeekCheck) == "Sunday"
+```
+
+***All of the weeks start on `Sunday` so there is no discrepancies between what we have and what is expected.***
+
+Introduce a new object called `flu.states`, with the following changes:
+  - select only the state level information, 
+  - remove the column `United.States`,  
+  - reshape the dataset such that you have one column for Date, on column with State names and one column named Value with the flu cases. (hint: you can use `gather` to reshape the data) 
+
+***To select the state level information, we can use the built in `state.names` data set in the `select` protion of manipulating our data. We will need to use `gsub` to substitues spaces with periods to match the naming convention in the `flu.us` dataframe. However, Washington D.C. is not available in the `state.name` data set so we will have to add that manually.***
+
+```{r flu.states dataframe, echo=TRUE}
+flu.states <- flu.us %>%
+  select(Date, gsub(" ", ".", state.name), District.of.Columbia) %>% #select only the state level information #remove the column `United.States`
+  gather(key = State, value = Value, -Date)                          #reshape the dataset
+```
+
+b. Use the `lubridate` package to convert the variable `Date` into a date & time variable. Then introduce variables `Month` and `Year` of the month of the data and the year of the data and save those variables in `flu.states`.
+With this data, answer the following questions:
+
+```{r }
+flu.states <- flu.states %>%
+  mutate(Date = as_datetime(Date),
+         Year = year(Date),
+         Month = month(Date, label = T, abbr = F))
+
+str(flu.states)
+```
+
+  - How many flu cases were in Iowa in 2014? **`r format(sum(flu.states %>% filter(State == "Iowa" & Year == 2014) %>% select(Value)), big.mark = ",")`**
+  - Which month saw the maximum number of flu cases in 2014 in Iowa? **`r (flu.states %>% filter(State == "Iowa" & Year == 2014) %>% filter(Value == max(Value)))$Month`**
+
+c. Find the number of flu cases in each month for each state for all months throughout the time frame. 
+For that, introduce a variable `Year.month` derived from the `Date` variable such that `Year.month` rounds `Date` down to the nearest boundary of the specified time unit. `Year.month` should be also a date & time object. Using the `ggplot2`package create a time series plot of monthly flu cases in Iowa on the y axis and `Year.month` along the x axis. Define the x labels with year and month information (check `scale_x_date`,  using 12 weeks breaks). To see the x axis labels change the text to  90 degrees.  Define the `xlab`, `ylab` and the `title` in an informative way for this problem.
+<br>
+Comment on something interesting about these data in  2-3 sentences. 
+
+```{r year.month, echo=TRUE}
+year.month <- flu.states %>%
+  mutate(Year.Month = floor_date(Date, "month")) %>%
+  group_by(Year.Month, State) %>%
+  summarise(Total.Value = sum(Value, na.rm = T))
+
+class(year.month$Year.Month)
+```
+
+```{r plot year.month, echo=TRUE}
+year.month %>% filter(State == "Iowa") %>%
+  ggplot(aes(x = as.Date(Year.Month), y = Total.Value)) +
+  geom_line() +
+  scale_x_date(date_breaks = "12 weeks", date_labels = "%B %d, %Y") +
+  scale_y_continuous(labels = comma) +
+  ggtitle("Flu Cases in Iowa Over Time") +
+  xlab("Year-Month") + ylab("Total Cases") +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+***The graph shows that flu cases are somewhat seasonal and slightly trending upward. As expected flu cases seem to spike leading into winter and throughout the winter months. The spikes are getting increasingly bigger, likely due to mutation leading to the virus to be more resitent to drugs, and possibly an older population.***
+
+d. Using the `ggplot2` package create a  seasonal plot of monthly flu cases in Iowa by mapping the number of monthly flu cases to the y axis and using `Month` on the x axis. Map year to colour. Connect data from the same year by lines. 
+Label these lines (you can use `geom_text`) with their year information on the left (before January time point) and right (after the December point).  Define the x label, y label and the title in an informative way and place the legend at the bottom.
+<br>
+Comment on something interesting about these data in  2-3 sentences.
+
+```{r plot seasonality, echo=TRUE}
+flu.states %>% mutate(Year = as.character(Year)) %>%
+  group_by(Year, Month, State) %>%
+  summarize(Flu.Cases = sum(Value, na.rm = T)) %>%
+  filter(State == "Iowa") %>%
+  ggplot(aes(x = Month, y = Flu.Cases, group = Year, colour = Year)) +
+  geom_line() +
+  geom_dl(aes(label = Year), method = list(dl.combine("first.points", "last.points"), cex = 0.6)) +
+  ggtitle("Flu Cases Year-Over-Year") +
+  xlab("Month") +
+  ylab("Flu Cases") +
+  theme(axis.text.x = element_text(angle = 90), legend.position = "bottom")
+```
+
+**This graph emphasizes the seasonality of flu cases. We can see that almost every year, the most cases of the flu are between the fall and early spring.** 
+
+e. Using a polygon layer with `geom_polygon` plot a choropleth map of the total number of flu cases for all US states in 2014.
+(hint: you need to work on the State names to be able to merge the data for this plot - use the `gsub` function for that. Be sure to have 49 states in the result.)
+
+```{r merge state data, echo=TRUE}
+
+
+state.data <- map_data("state")
+
+flu.cases.2014 <- flu.states %>%
+  filter(Year == 2014) %>%
+  mutate(State = tolower(gsub("\\.", " ", State))) %>%
+  group_by(State) %>%
+  summarise(Flu.Cases = sum(Value, na.rm = T))
+
+map.states <- state.data %>% rename(State = region) %>%
+  inner_join(flu.cases.2014,
+  by = "State")
+
+length(unique(map.states$State))
+```
+
+```{r plot flu.cases, echo=TRUE}
+map.states %>%
+  ggplot(aes(x = long, y = lat)) +
+  geom_path(aes(group = group)) +    #for boarders
+  geom_polygon(aes(group = group,    #for fill
+                   fill = Flu.Cases)) +    #what to fill
+  ggthemes::theme_map()
+```
+

@@ -3,14 +3,18 @@ rm(list = ls())
 
 #====library bank====
 suppressMessages(library(tidyverse, warn.conflicts = F, quietly = T))
-library(ggplot2)
 library(RODBC)
 library(lubridate, warn.conflicts = F)
+library(scales, warn.conflicts = F)
 
-#====read in dataset====
-openmrs <- odbcDriverConnect("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=F:/School/Tippie_Business Analytics/Health Care Analytics/openmrs.accdb")
-
-mrs_patient <- sqlFetch(openmrs, "mrs_patient", as.is = FALSE, stringsAsFactors = FALSE, na.strings = c("", "N/A")) %>%
+access_database <- paste0("F:/School/Tippie_Business Analytics/Health Care Analytics", "/openmrs.accdb")
+#====reading in dataset====
+openmrs <- odbcDriverConnect(paste0("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=",
+                                    access_database))
+mrs_patient <- sqlFetch(openmrs, "mrs_patient",
+                        as.is = FALSE,
+                        stringsAsFactors = FALSE,
+                        na.strings = c("", "N/A")) %>%
   filter(!is.na(birthdate)) %>%
   select(patient_id,
          gender,
@@ -21,10 +25,12 @@ mrs_patient <- sqlFetch(openmrs, "mrs_patient", as.is = FALSE, stringsAsFactors 
          middle_name,
          family_name,
          city_village,
-         country) %>%
-  mutate(outlier = ifelse(is.na(country), 0, 1)) #only one person from USA #other from kenya
+         country)
 
-mrs_obs <- sqlFetch(openmrs, "mrs_obs", as.is = F, stringsAsFactors = FALSE, na.strings = c("", "N/A")) %>%
+mrs_obs <- sqlFetch(openmrs, "mrs_obs",
+                    as.is = F,
+                    stringsAsFactors = FALSE,
+                    na.strings = c("", "N/A")) %>%
   select(obs_id,
          patient_id,
          encounter_id,
@@ -38,7 +44,10 @@ mrs_obs <- sqlFetch(openmrs, "mrs_obs", as.is = F, stringsAsFactors = FALSE, na.
          comments)
 
 
-mrs_concept <- sqlFetch(openmrs, "mrs_concept", as.is = F, stringsAsFactors = FALSE, na.strings = c("", "N/A")) %>%
+mrs_concept <- sqlFetch(openmrs, "mrs_concept",
+                        as.is = F,
+                        stringsAsFactors = FALSE,
+                        na.strings = c("", "N/A")) %>%
   select(concept_id,
          concept_name,
          retired,
@@ -56,99 +65,142 @@ mrs_concept <- sqlFetch(openmrs, "mrs_concept", as.is = F, stringsAsFactors = FA
          units,
          precise)
 
-mrs_encounter <- sqlFetch(openmrs, "mrs_encounter", as.is = F, stringsAsFactors = FALSE, na.strings = c("", "N/A")) %>%
-  select(encounter_id, encounter_type_id = encounter_type, patient_id)
+mrs_encounter <- sqlFetch(openmrs, "mrs_encounter",
+                          as.is = F,
+                          stringsAsFactors = FALSE,
+                          na.strings = c("", "N/A")) %>%
+  select(encounter_id,
+         encounter_type_id = encounter_type,
+         patient_id)
   
 
-mrs_encounter_type <- sqlFetch(openmrs, "mrs_encounter_type", as.is = F, stringsAsFactors = FALSE, na.strings = c("", "N/A")) %>%
-  select(encounter_type_id, encounter_type_name = name, encounter_description = description)
+mrs_encounter_type <- sqlFetch(openmrs, "mrs_encounter_type",
+                               as.is = F,
+                               stringsAsFactors = FALSE,
+                               na.strings = c("", "N/A")) %>%
+  select(encounter_type_id,
+         encounter_type_name = name,
+         encounter_description = description)
 
-mrs_tribe <- sqlFetch(openmrs, "mrs_tribe", as.is = F, stringsAsFactors = FALSE, na.strings = c("", "N/A")) %>%
+mrs_tribe <- sqlFetch(openmrs, "mrs_tribe",
+                      as.is = F,
+                      stringsAsFactors = FALSE,
+                      na.strings = c("", "N/A")) %>%
   select(tribe_id, tribe_name = name)
 
-mrs_program <- sqlFetch(openmrs, "mrs_program", as.is = F, stringsAsFactors = FALSE, na.strings = c("", "N/A")) %>%
+mrs_program <- sqlFetch(openmrs, "mrs_program",
+                        as.is = F,
+                        stringsAsFactors = FALSE,
+                        na.strings = c("", "N/A")) %>%
   select(program_id, program_name = name)
 
-mrs_patient_program <- sqlFetch(openmrs, "mrs_patient_program", as.is = F, stringsAsFactors = FALSE, na.strings = c("", "N/A")) %>%
-  filter(voided != 1) %>% #filter out voided #gets rid of duplicates
-  select(patient_program_id, patient_id, program_id, date_enrolled, date_completed) %>%
-  mutate(outlier = ifelse(!is.na(date_completed), 1, 0)) #outlier based on complete date #only one person has completed
+mrs_patient_program <- sqlFetch(openmrs, "mrs_patient_program",
+                                as.is = F,
+                                stringsAsFactors = FALSE,
+                                na.strings = c("", "N/A")) %>%
+  filter(voided != 1) %>%                                        #filter out voided #gets rid of duplicates
+  select(patient_program_id,
+         patient_id,
+         program_id,
+         date_enrolled,
+         date_completed)
 
 
-#====program breakdown====
+#====analysis files====
 
 #====encounter anlaysis====
-#this table combines encounter and encounter type
-comb_encounter <- mrs_encounter %>%
-  left_join(y = mrs_encounter_type,
+#We will create a table which combines encounter and encounter type by joining
+#`mrs_encounter` with `mrs_encounter_type`.
+df_encounter <- mrs_encounter %>%
+  left_join(y = mrs_encounter_type %>% select(-encounter_description),
             by = "encounter_type_id")
-#counts
-data.frame(count(comb_encounter, encounter_type_name))  #counts the number of encounter types
 
-#graphs
-ggplot(comb_encounter, aes(x = encounter_type_name)) + geom_bar()
+#We can now do a quick review of the encounter types by creating a bar graph
+#count(df_encounter, encounter_type_name) %>%            #counts the number of encounter types
+df_encounter %>%
+  count(encounter_type_name) %>%
+  ggplot(aes(x = encounter_type_name, y = n)) +    #graphs the number of encounter types
+  geom_bar(stat = "identity") +                                          #with a bar graph
+  geom_text(aes(label = comma(n)),
+            position = position_dodge(0.9),
+            vjust = -0.3) +
+  ggtitle("Count of Encounter Types") +
+  xlab("Encounter Type") +
+  ylab("Count of Encounters") + scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(face = "bold"))
+  
 
-#this table counts the number of return types for each patient
-#here we can get a sense of how many times pateint's returned
-#and if there is any mistakes on the "initial" documentation
-count_patient_return <- count(comb_encounter, patient_id, encounter_type_name)
+#We can see that there are not many `INITIAL` encounters not many
+#`PEDS` encounter types. Since this is the case, we will remove those
+#types of encounters and keep only the `ADULTRETURN`.
+df_encounter <- df_encounter %>%
+  filter(encounter_type_name != "ADULTINITIAL" & encounter_type_name != "PEDSRETURN")
 
+#Now we want to counts the number of return types for each patient.
+#This will give us a sense of how many times pateint's returned
+#I first did this without removing the `ADULTINITIAL` and `PEDSRETURN`
+#and found that there was duplicate `ADULTINITAL` entries for the same patient.
+count_patient_return <- df_encounter %>% count(patient_id, encounter_type_name)
 
-#we will need to add this back into the mrs_encounter to
-#identify outliers
-mrs_encounter <- mrs_encounter %>%
-  left_join(y = count_patient_return %>%
-              filter(grepl("INITIAL", encounter_type_name) & n > 1),
-            by = "patient_id") %>%
-  mutate(outlier = ifelse(grepl("INITIAL", encounter_type_name) & n > 1, 1, 0 )) %>%
-  select(-c(encounter_type_name, n))
+count_patient_return %>%
+ggplot(aes(x = n)) +
+  geom_histogram(bins = max(count_patient_return$n)) +
+  ggtitle("Frequency of Patients Returning") +
+  xlab("Number of Returns") + scale_x_continuous(breaks = round(seq(min(count_patient_return$n),
+                                                                    max(count_patient_return$n), by = 1),1)) +
+  ylab("Frequency of Patients") + scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(face = "bold"))
 
-#the below graph with give us a visual how many times
-#patients were returning
-#it is a histo gram of patient returns
-ggplot(count_patient_return %>%                        
-         filter(encounter_type_name != "ADULTINITIAL"),
-       aes(x = n)) +
-  geom_histogram(bins = 5)
+count_patient_return %>% count(n)
 
 #====program analysis====
 #this table combines the patient-program table with with some basic
 #patient information and some program information
 #so we can do some simple analysis. In addtion I have added if they
-#are and 'ADULT' or 'PEDS' to determin outlires
-comb_program <- mrs_patient_program %>%
+#are and 'ADULT' or 'PEDS' to determin outlires.I have already removed `PEDS`
+#in the `df_encouter` table so to keep our data consistent, we will do it here as well
+#in addtion, there is
+sum(is.na(mrs_patient_program$date_enrolled))/nrow(mrs_patient_program)
+#of patients who were never enrolled. These will put a damper on any time analysis
+#we want to do, so we will remove them now. Per (the book), if over 10% of people
+#needed in the study confirm to be in the program, we are in good shape.
+df_program <- mrs_patient_program %>%
   left_join(y = mrs_patient %>% select(patient_id, gender, birthdate),
             by = "patient_id") %>%
   left_join(., y = mrs_program,
             by = "program_id") %>%
   mutate(age_started = time_length(difftime(date_enrolled, birthdate), "years"),
-         age_current = time_length(difftime(Sys.Date(), birthdate), "years")) %>%
-  left_join(., y = comb_encounter %>%
+         yrs_enrolled = time_length(difftime(Sys.Date(), date_enrolled), "years")) %>%
+  left_join(., y = df_encounter %>%
               mutate(encounter_type_name = gsub("RETURN|INITIAL", "", encounter_type_name)) %>%
               distinct(patient_id, encounter_type_name),
             by = "patient_id") %>%
-    filter(age_current > 18 & encounter_type_name != "PEDS")
+  #remove explaination
+  filter(!is.na(encounter_type_name) & !is.na(date_enrolled) & is.na(date_completed)) %>%
+  select(-date_completed)
 
 
+x <- df_encounter %>% mutate(encounter_type_name = gsub("RETURN|INITIAL", "", encounter_type_name)) %>%
+  distinct(patient_id, encounter_type_name)
+x[duplicated(x$patient_id) | duplicated(x$patient_id, fromLast = T), ]
 
-#counts
-data.frame(count(comb_program, program_name))  #counts the number of patients in each program
-
-data.frame(count(comb_program,                 #counts the number of patients
-                 program_name, gender)) %>%    #by gender in each program
-  spread(key = gender, value = n)
-
-#graphs
-ggplot(comb_program, aes(x = program_name)) + geom_bar()   #bargraph of how many patients in each program
-
-ggplot(comb_program, aes(x = program_name)) + geom_bar() + #bargraph of how many patients in each program
-  facet_wrap( ~ gender)                                    #by gender
-
+#graph of above
+df_program %>%
+  count(program_name) %>%
+  ggplot(aes(x = program_name, y = n)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = comma(n)),
+            position = position_dodge(0.9),
+            vjust = -0.3) +
+  ggtitle("Count of Patients in Each Program") +
+  xlab("Program Name") +
+  ylab("Count in Program") + scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(face = "bold"))
 
 
 #this table identifies how many patient
 #are admitted to both programs
-comb_program_in <- comb_program %>%
+df_program_in <- df_program %>%
   count(patient_id, program_name) %>%
   spread(key = program_name, value = n) %>%
   mutate(program_in = ifelse(!is.na(`HIV Program`) & is.na(`TB Program`), "HIV Program",
@@ -157,78 +209,151 @@ comb_program_in <- comb_program %>%
                                            "Review")))) %>%
   select(patient_id, program_in)
 
-#counts
-data.frame(count(comb_program_in, program_in)) #counts the number of patients in each program and/or both programs
+#graph of above
+df_program_in %>%
+  count(program_in) %>%
+  ggplot(aes(x = program_in, y = n)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = comma(n)),
+            position = position_dodge(0.9),
+            vjust = -0.3) +
+  ggtitle("Count of Patients in Each & Both Programs") +
+  xlab("Program Name") +
+  ylab("Count in Program") + scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(face = "bold"))
 
-#graphs
-ggplot(comb_program_in, aes(x = program_in)) + geom_bar()  #bargraph of how many patients in each program and/or both programs
+#weed down to only `HIV Program`
+df_program <- df_program %>%
+  left_join(df_program_in, by = "patient_id") %>%
+  filter(program_in != "Both Programs" & program_in != "TB Program")
+
+df_program %>%
+  count(gender) %>%
+  ggplot(aes(x = gender, y = n, fill = gender)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = comma(n)),
+            position = position_dodge(0.9),
+            vjust = -0.3) +
+  ggtitle("Count of Gender Types") +
+  xlab("Gender") +
+  ylab("Count") + scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(face = "bold"))
 
 
+df_program %>%
+  ggplot(aes(x = gender, y = age_started)) +
+  geom_boxplot() +
+  ggtitle("Age by Gender") +
+  xlab("Gender") +
+  ylab("Age") +
+  theme(plot.title = element_text(face = "bold"))
+
+df_program %>%
+  ggplot(aes(x = gender, y = yrs_enrolled)) +
+  geom_boxplot() +
+  ggtitle("Years Enrolled by Gender") +
+  xlab("Gender") +
+  ylab("Years")
+theme(plot.title = element_text(face = "bold"))
+
+#remove people over 60 and that have not been enrolled more than 10 Years
+df_program %>% mutate(outlier = )
+
+
+count_patient_return %>%
+  ggplot(aes(x = n)) +
+  geom_histogram(bins = max(count_patient_return$n)) +
+  ggtitle("Frequency of Patients Returning") +
+  xlab("Number of Returns") + scale_x_continuous(breaks = round(seq(min(count_patient_return$n),
+                                                                    max(count_patient_return$n), by = 1),1)) +
+  ylab("Frequency of Patients") + scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(face = "bold"))
 #====patient anlaysis====
 #this table adds some basic information
 #to the patient table such as "tribe"
 #and what program they are in
-comb_patient <- mrs_patient %>%
+df_patient <- mrs_patient %>%
+  mutate()
   left_join(y = mrs_tribe,
             by = "tribe_id") %>%
-  left_join(., y = comb_program_in,
-            by = "patient_id")
+  left_join(., y = df_program_in,
+            by = "patient_id") %>%
+  filter(is.na(program_in) | program_in != "Both Programs" & program_in != "TB Program")
+  
 
 #counts
-data.frame(count(comb_patient,                 #counts the number of patients
+data.frame(count(df_patient,                 #counts the number of patients
                  tribe_name, program_in)) %>%  #by tribe in each program
   spread(key = program_in, value = n)
 
 #graphs
-ggplot(comb_patient, aes(x = tribe_name)) + geom_bar()   #bargraph of how many patients in each tribe
-ggplot(comb_patient, aes(x = program_in)) + geom_bar()   #bargraph of how many patients in each program (as above)
-ggplot(comb_patient, aes(x = program_in)) + geom_bar() + #bargraph of how many patients in each program
+ggplot(df_patient, aes(x = tribe_name)) + geom_bar()   #bargraph of how many patients in each tribe
+ggplot(df_patient, aes(x = program_in)) + geom_bar()   #bargraph of how many patients in each program (as above)
+ggplot(df_patient, aes(x = program_in)) + geom_bar() + #bargraph of how many patients in each program
   facet_wrap( ~ tribe_name)                              #broken out by tribe
 
 #====obs anlaysis====
 #this table combines mrs_obs with concept information
 #we need to use concept for the action and for
 #the answer to the action
-comb_obs <- mrs_obs %>%
+df_obs <- mrs_obs %>%
   left_join(y = mrs_concept,
             by = "concept_id") %>%
   left_join(., y = mrs_concept %>% select(concept_id, ans_name = concept_name,
                                           ans_description = description, ans_datatype = datatype,
                                           ans_class = concept_class, ans_set = is_set),
             by = c("value_coded" = "concept_id")) %>%
-  left_join(., y = comb_encounter,
+  left_join(., y = df_encounter,
             by = c("patient_id", "encounter_id"))
 
 
 #counts
-data.frame(count(comb_obs, concept_class))
-data.frame(count(comb_obs %>% filter(concept_class == "Finding"), ans_name))
-data.frame(count(comb_obs, concept_name))
+data.frame(count(df_obs, concept_class))
+data.frame(count(df_obs %>% filter(concept_class == "Finding"), ans_name))
+data.frame(count(df_obs, concept_name))
 
 #table to invetigate stages
-comb_stage <- comb_obs %>%
+df_stage <- df_obs %>%
   filter(concept_class == "Finding", grepl("STAGE", ans_name)) %>%
   select(obs_datetime, patient_id, stage = ans_name) %>%
   mutate(patient_type = ifelse(grepl("ADULT", stage), "ADULT", "PED"))
 
 #counts
-count(comb_stage, stage)
+count(df_stage, stage)
 
 #graph
-ggplot(comb_stage, aes(x = stage)) + geom_bar() + facet_wrap( ~ patient_type)
+ggplot(df_stage, aes(x = stage)) + geom_bar() + facet_wrap( ~ patient_type)
 
 #table which counts how many times each patient
 #was in each stage
-count_by_stage <- comb_stage %>%
+count_by_stage <- df_stage %>%
   count(patient_id, ans_name) %>%
   spread(key = stage, value = n)
 
 #table to see if patient changed stages
-count_stage_change <- comb_stage %>%
+count_stage_change <- df_stage %>%
   count(patient_id, stage) %>%
   count(patient_id)
 
+#====write DB files - proper====
+write.csv(df_encounter %>% select(-encounter_type_name),
+          paste0("F:/School/Tippie_Business Analytics/Health Care Analytics/Project/newDB_v2",
+                 "/df_encounter.csv"), row.names = F, na = "")
+write.csv(mrs_encounter_type,
+          paste0("F:/School/Tippie_Business Analytics/Health Care Analytics/Project/newDB_v2",
+                 "/mrs_encounter_type.csv"), row.names = F, na = "")
 
+
+
+#====write DB files - clean====
+write.csv(df_encounter %>% select(-encounter_type_id),
+          paste0("F:/School/Tippie_Business Analytics/Health Care Analytics/Project/newDB_clean",
+                 "/df_encounter.csv"), row.names = F, na = "")
+
+
+
+
+#====write DB files====
 write.csv(mrs_concept, paste0("F:/School/Tippie_Business Analytics/Health Care Analytics/Project/newDB", "/mrs_concept.csv"), row.names = F, na = "")
 write.csv(mrs_encounter, paste0("F:/School/Tippie_Business Analytics/Health Care Analytics/Project/newDB", "/mrs_encounter.csv"), row.names = F, na = "")
 write.csv(mrs_encounter_type, paste0("F:/School/Tippie_Business Analytics/Health Care Analytics/Project/newDB", "/mrs_encounter_type.csv"), row.names = F, na = "")
@@ -237,5 +362,3 @@ write.csv(mrs_patient, paste0("F:/School/Tippie_Business Analytics/Health Care A
 write.csv(mrs_patient_program, paste0("F:/School/Tippie_Business Analytics/Health Care Analytics/Project/newDB", "/mrs_patient_program.csv"), row.names = F, na = "")
 write.csv(mrs_program, paste0("F:/School/Tippie_Business Analytics/Health Care Analytics/Project/newDB", "/mrs_program.csv"), row.names = F, na = "")
 write.csv(mrs_tribe, paste0("F:/School/Tippie_Business Analytics/Health Care Analytics/Project/newDB", "/mrs_tribe.csv"), row.names = F, na = "")
-
-

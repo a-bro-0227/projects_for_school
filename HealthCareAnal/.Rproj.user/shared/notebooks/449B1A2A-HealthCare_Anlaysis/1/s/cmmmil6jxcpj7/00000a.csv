@@ -1,0 +1,18 @@
+"0","mrs_patient <- sqlFetch(openmrs, ""mrs_patient"",                 #what table to `fetch` from the `openmrs` database we connected to
+                        as.is = FALSE,
+                        stringsAsFactors = FALSE,
+                        na.strings = c("""", ""N/A"")) %>%
+  filter(!is.na(birthdate)) %>%                                  #filter out blank entries
+  select(patient_id,                                             #call out columns needed
+         gender,
+         birthdate,
+         birthdate_estimated,
+         tribe_id = tribe,
+         given_name,
+         middle_name,
+         family_name,
+         city_village,
+         country)
+"
+"2","Error in inherits(channel, ""RODBC"") : object 'openmrs' not found
+"

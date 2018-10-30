@@ -1,0 +1,19 @@
+---
+title: "Midterm - test run"
+author: "Heike Hofmann"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This file is to test whether you have all of the necessary tools installed and can extract files from a zipped folder.
+
+Knit this document and see whether you can get an html file. 
+
+```{r}
+library(tidyverse)
+```
+
+###Midterm Test - Alex Brown
