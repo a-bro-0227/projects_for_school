@@ -475,5 +475,6 @@ comb_df %>%
 
 ## Recommendations 
 
-Educate tribes how HIV can effect the body's immune system and ability to fight infection and disease.
-Create a long term study to further investigate and emphasize the affects of HIV.
+- Improve the collection of data process. Figures for all Important variables to study.
+- Remove data that is inconsistent or non-beneficial to the study.
+- Create schema more convenient for analysis.

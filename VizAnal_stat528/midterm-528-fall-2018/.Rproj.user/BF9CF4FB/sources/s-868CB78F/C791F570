@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1540503729007.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "C791F570",
+    "lastKnownWriteTime" : 1540991477,
+    "last_content_update" : 1540991477554,
+    "path" : "~/Documents/Teaching/stat 579/stat 579 - Fall 2018/midterm/midterm-528-fall-2018/midterm-stat-528-2018.Rmd",
+    "project_path" : "midterm-stat-528-2018.Rmd",
+    "properties" : {
+        "cursorPosition" : "44,19",
+        "scrollLine" : "36"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

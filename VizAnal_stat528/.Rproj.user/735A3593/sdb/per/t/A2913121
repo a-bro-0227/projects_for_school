@@ -4,11 +4,11 @@
     "created" : 1539573883187.000,
     "dirty" : false,
     "encoding" : "UTF-8",
-    "folds" : "25|20|143|0|\n144|20|270|0|\n271|20|332|0|\n",
+    "folds" : "",
     "hash" : "2868148047",
     "id" : "A2913121",
     "lastKnownWriteTime" : 1540247134,
-    "last_content_update" : 1540247134009,
+    "last_content_update" : 1541084677640,
     "path" : "~/GitHub/projects_for_school/VizAnal_stat528/classNotes.R",
     "project_path" : "classNotes.R",
     "properties" : {

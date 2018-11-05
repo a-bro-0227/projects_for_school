@@ -111,6 +111,8 @@ dfs <- dfs[dfs == T]
 
 names(dfs)
 
+lapply(mget(names(dfs)[dfs]), colnames)
+
 mapply(write.csv, mget(names(dfs)[dfs]),
        file = paste0("F:/School/Tippie_Business Analytics/Health Care Analytics/Project/tables_used/",
                      names(dfs)[dfs], ".csv"),
@@ -319,7 +321,7 @@ comb_df %>%
   theme(plot.title = element_text(face = "bold"))  #set header to bold
 
 comb_df %>%
-  filter(!is.na(killer_tcells) & !is.na(helper_tcells) & !is.na(hiv_stage)) %>%
+  filter(!is.na(killer_tcells) & !is.na(helper_tcells) & !is.na(hiv_stage) & helper_tcells >= 99) %>%
   ggplot(aes(x = killer_tcells, y = helper_tcells, colour = hiv_stage)) +
   geom_point() +
   facet_wrap( ~ hiv_stage, ncol = 2) +
@@ -359,3 +361,5 @@ comb_df %>%
 
 nrow(comb_df %>% filter(!is.na(killer_tcells) & !is.na(helper_tcells) & !is.na(hiv_stage)))/nrow(comb_df)
 nrow(comb_df %>% filter(!is.na(absolute_lymphocyte_count), !is.na(blood_platelet), !is.na(hiv_stage)))/nrow(comb_df)
+
+write.csv(comb_df, "F:/School/Tippie_Business Analytics/Health Care Analytics/Project/comb_df.csv", row.names = F, na = "")

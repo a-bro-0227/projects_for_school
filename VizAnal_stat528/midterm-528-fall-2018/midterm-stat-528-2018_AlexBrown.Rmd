@@ -1,0 +1,138 @@
+---
+title: "Midterm - Stat 528 - Fall 2018"
+author: "Alex Brown"
+date: "10/27/18 -- 11/04/18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Since 1972 the General Social Survey (GSS) is conducted every two years by the National Opinion Research Center (NORC).
+The survey allows insight into developing trends across dozens of different topics. 
+
+From the GSS [website](https://gssdataexplorer.norc.org/variables/):
+
+> The GSS contains a standard core of demographic, behavioral, and attitudinal questions, plus topics of special interest. Among the topics covered are civil liberties, crime and violence, intergroup tolerance, morality, national spending priorities, psychological well-being, social mobility, and stress and traumatic events.
+
+Here we are focusing on some of these aspects. A file with the data is part of the folder you downloaded. You can get ready for answering the questions below by running the following lines of code:
+
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+gss <- readRDS("gss.rds")
+```
+
+0. Include your name in the YAML at the top of this file. Include your responses to the questions (code and comments) in this file and submit in Canvas. 
+
+1.  (18 points) Each row of the `gss` data set corresponds to an interview. How many interviews were conducted each year? In which year were the most interviews conducted (and how many)? Draw a plot of the number of interviews by year. Describe the relationship in two to three sentences.
+
+### How Many Interviews Were Conducted Each Year?
+
+```{r}
+gss %>%
+  count(YEAR)
+```
+
+### In Which Year Were the Most Interviews Conducted (and how many)?
+
+```{r}
+gss %>%
+  count(YEAR) %>%
+  filter(n == max(n))
+```
+
+### Plot The Number of Interviews by Year
+```{r}
+gss %>%
+  count(YEAR) %>%
+  ggplot(aes(x = YEAR, y = n)) +
+  geom_point() +
+  geom_line() +
+  scale_x_continuous(breaks = seq(min(gss$YEAR), max(gss$YEAR), 1), minor_breaks = seq(min(gss$YEAR), max(gss$YEAR), 1)) +
+  ggtitle("Interviews by Year") +
+  ylab("Number of Interviews") +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+***It seems that the interviews were relatively low and stable between 1972 and 1980. Then the number of interviews seemed to vary until 1994 when there was huge spike. It then plateaus until 2006 where there is another large spike. This spike is represented in the previous question about which year has the most interviews. After this spike, the number of interviews seems to vary widely.*** 
+
+2. (16 points) The variable `DEGREE` shows the respondent's highest educational degree.
+Give a frequency breakdown of `DEGREE`. Change `DK` and `IAP` to NA.  
+Bring the levels into an order reflecting the amount of schooling (i.e the new ordering should be `LT HIGH SCHOOL`, `HIGH SCHOOL`, `JUNIOR COLLEGE`, `BACHELOR`, `GRADUATE`). 
+Draw side -by-side boxplots of age (`AGE`) by degree (`DEGREE`).  Comment on the result. 
+
+```{r}
+gss <- gss %>% mutate(DEGREE = gsub("DK|IAP|NA", NA, DEGREE)) 
+gss$DEGREE <- factor(gss$DEGREE, levels = c("LT HIGH SCHOOL", "HIGH SCHOOL", "JUNIOR COLLEGE", "BACHELOR", "GRADUATE"))
+
+gss %>%
+  count(DEGREE) %>%
+  mutate(freq = n / sum(n))
+
+class(gss$AGE)
+gss %>% mutate(AGE = as.numeric(AGE)) %>% filter(!is.na(AGE)) %>%
+  ggplot(aes(x = DEGREE, y = AGE)) +
+  geom_boxplot() +
+  ggtitle("AGE by DEGREE")
+```
+
+3. The variable `AGEKDBRN` is the respondents' age at the time their first kid was born. 
+
+    a. (14 points) How many missing values are in the variable overall? Calculate the average and standard deviation of `AGEKDBRN` for men and women. Comment on it. 
+    b. (26 points) Calculate the average of `AGEKDBRN` over time (`YEAR`), genders (`SEX`) and education (`DEGREE`). Make sure to keep track of how many values each average is based on. Plot the relationship for averages that are based on at least 30 records. Summarise the results in at least three sentences.
+
+### How Many Missing Values in AGEKDBRN?
+
+```{r}
+sum(is.na(gss$AGEKDBRN))
+```
+
+### Average and Standard Deviation of AGEKDBRN for Men and Women
+
+```{r}
+gss %>%
+  group_by(SEX) %>%
+  summarise(AVG.AGEKDBRN = mean(AGEKDBRN, na.rm = T),
+            STD.AGEKDBRN = sd(AGEKDBRN, na.rm = T))
+```
+
+***This is expected. It is well known that males, on average, have their babies later in life than females. This is also representative of what I have seen in my life. I am excited to see what this looks like over time because I know people are having their babies later in life.***
+
+### Average and Standard Deviation of AGEKDBRN Over Time, Gender, and Education
+
+```{r}
+gss %>%
+  filter(!is.na(AGEKDBRN)) %>% #filtering out all instances of na in the age born.
+  group_by(YEAR, SEX, DEGREE) %>%
+  summarise(AVG.AGEKDBRN = mean(AGEKDBRN, na.rm = T),
+            NUMB.RECORDS = n())
+```
+
+```{r}
+gss %>%
+  filter(!is.na(AGEKDBRN), !is.na(DEGREE)) %>%
+  group_by(YEAR, SEX, DEGREE) %>%
+  summarise(AVG.AGEKDBRN = mean(AGEKDBRN, na.rm = T)) %>%
+  ggplot(aes(x = YEAR, y = AVG.AGEKDBRN, color = DEGREE)) +
+  geom_line() +
+  facet_wrap( ~ SEX)
+```
+
+***To get a better picture, I removed instances where `DEGREE` was `NA`. You can see from the graph that people with lower education levels have children earlier in life. In addtion, people with lower levels of education (less than high school) are having children earlier in life than in previous years (trending down in age), while people with higher education are having their childern later in life (trending up in age), especually for men.***
+
+4. The variable `REGION` contains the geographic region a respondent lives in. The file `division.csv` consists of a map of the United States with states grouped by their division. 
+
+    a. (12 points) Load the file `division.csv` into the session and draw a map (using  `ggplot2`).
+    b. (10 points) Describe what steps are necessary to create a choropleth map of the average age (`AGEKDBRN`) when the first kid is born in 2016 by region (`REGION`). Point out potential problems, but do not actually create the map!
+
+```{r}
+division <- read.csv("division.csv", stringsAsFactors = F)
+
+division %>%
+  ggplot(aes(x = long, y = lat)) +
+  geom_path(aes(group = group))    #for boarders
+
+```
+
+***To create the choropleth map, you would group by year and region and then summarize with mean by AGEKDBRN then filter the year down to 2016. You would then combine the dvision and gss by region and region.name. You would need to group the regions to match the region.name in the divsion table. you could then create your map based on the lat and long with mean of the AGEKDBRN created as the fill.***
