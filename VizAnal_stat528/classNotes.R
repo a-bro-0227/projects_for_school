@@ -329,9 +329,7 @@ hdata %>% filter(!is.na(happy), happy != "DK", happy != "IAP") %>%
 
 read.csv("fbi-crimes.csv")
 
-
-
-#====Lecture 10 Notes
+#====Lecture 10 Notes====
 
 library(ggplot2)
 library(dplyr)
@@ -379,6 +377,46 @@ fbimap %>%
   scale_fill_gradient2(midpoint = median(fbimap$Vehicle.Theft/fbimap$Population * 60000)) +
   ggthemes::theme_map()
 
+
+#====Lecture 12 Notes====
+
+library(xml2)
+library(rvest)
+library(tidyverse)
+library(lubridate)
+
+url <- "http://www.realclearpolitics.com/epolls/2016/president/us/general_election_trump_vs_clinton-5491.html"
+doc <- read_html(url)
+tables <- html_table(doc)
+str(tables)
+
+# Relevant information is in table # 4
+# now we need to clean the data
+raw <- tables[[4]]
+head(raw)
+
+clean01 <- raw %>% separate(Date, into = c("Start_Date", "End_Date"), sep = " - ")
+
+clean02 <- clean01 %>%
+  mutate(Start_Date = ymd(paste("2016", Start_Date, sep = "/")),
+         End_Date = ymd(paste("2016", End_Date, sep = "/")))
+
+polls <- clean02 %>%
+  separate(Sample, into = c("Number", "Type"), fill = "left") %>%
+  filter(Poll != "Final Results" & Poll != "RCP Average") %>%
+  rename(Clinton = `Clinton (D)`, Trump = `Trump (R)`) %>%
+  add_count(Poll) %>%
+  mutate(Number = as.numeric(Number),
+         pollster = ifelse(n <=5, "Other",
+                           sapply(Poll, function(x) gsub(paste0("^(.*?",
+                                                                substr(x, 1, 3),".*?)",
+                                                                substr(x, 1, 3), ".*"),
+                                                         "\\1", x)))) #%>% select(-n)
+
+levels(as.factor(polls$pollster))
+
+polls %>%
+  ggplot(aes(x = End_Date, y = Clinton - Trump, colour = pollster))
 #====Quizzes====
 #quiz 5
 y <- matrix(data = c(1, 1, 5, 3, 4, 2), nrow = 3, ncol = 2)

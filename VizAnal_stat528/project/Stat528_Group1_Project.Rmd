@@ -1,0 +1,100 @@
+---
+title: "Stat528_Group1_Project"
+author: "Group1"
+date: "November 15, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Project Description
+
+For our group assignment, we have chose to look at and Animal Shelter's Data set from Dallas. This data can be found on the [TidyTuesday](https://github.com/rfordatascience/tidytuesday) project website at the following link: [week18_dallas_animals.xlsx](https://github.com/rfordatascience/tidytuesday/blob/master/data/2018-07-31/week18_dallas_animals.xlsx)
+
+We are interested in this data set because it provides a variety of information and data type classes and we believe valuable conclusions can be drawn from it. Some of the questions we aim to answer include:
+
+* Is there any seasonality for adoptions and intake?
+* How long are animals typically at the shelter? How long for different outcomes?
+* Which animals are most likely to be adopted?
+* Which animals/breed  are adopted the quickest?
+* Does a particular animal origin or intake type lead to a faster turnaround?
+
+We think these questions can help the animal shelter optimize a plan for incoming pets and try to maximize the opportunity for a pet to get adopted.
+
+## Data Description
+
+Unfortunately, there are issues reading this file directly from the website. We have downloaded this file and created a project for to read in the file.
+
+First, we will review what sheets this file contains.
+
+```{r set up, echo=TRUE}
+#====library bank====
+library(readxl)
+library(scales, warn.conflicts = F)
+suppressPackageStartupMessages(library(tidyverse,
+                                       warn.conflicts = F))
+
+# url <- "https://github.com/rfordatascience/tidytuesday/blob/master/data/2018-07-31/week18_dallas_animals.xlsx"
+# destfile <- "week18_dallas_animals.xlsx"
+# download.file(url, destfile)
+
+excel_sheets("week18_dallas_animals.xlsx")
+```
+
+We can see there there are two tabs: `raw` and `simple`. It would probably be a good idea to use the `raw` table since there is more information. To make sure there are no columns in the `simple` tab that are not in the `raw` tab, we will `left_join` the `raw` tab's column names to the `simple` tab's column names and make sure there is no `NA` values and then ensure the lengths are the same.
+
+```{r col check, echo=TRUE}
+suppressWarnings(data.frame(colname_simple = as.character(colnames(read_excel("week18_dallas_animals.xlsx", sheet = "simple")))) %>%
+  left_join(data.frame(colname_simple = as.character(colnames(read_excel("week18_dallas_animals.xlsx", sheet = "raw"))),
+                       colname_raw = as.character(colnames(read_excel("week18_dallas_animals.xlsx", sheet = "raw")))),
+            by = "colname_simple"))
+       
+```
+
+```{r length data, echo=TRUE}
+nrow(read_excel("week18_dallas_animals.xlsx", sheet = "simple")) == nrow(read_excel("week18_dallas_animals.xlsx", sheet = "raw"))
+```
+
+Great! We can see that `simple` is just a subset of `raw`. In that case, we will just use the `raw` tab in case there are some conclusions that can be drawn from the `raw` tab information that cannot be drawn from the `simple` tab.
+
+Now, we will finally read in the data and create a the data frame `dallas_animals`.
+
+```{r read in file, echo=TRUE}
+dallas_animals <- read_excel("week18_dallas_animals.xlsx", sheet = "raw", na = "NA")
+```
+
+To further investigate this data, we can use `glimpse` which will give us the dimensions of the data, the names of the columns in the data frame, and the column types. in addition we will get to see some of the first few rows of the data.
+
+```{r glimpse, echo=TRUE}
+glimpse(dallas_animals)
+```
+
+We can see there is `r format(nrow(dallas_animals), big.mark = ",", scientific = FALSE, trim = F)` animals which the Dallas Animal Shelter has taken in. To further investigate this number, we can create a time series graph which will give us an idea of the time frame of our data and any obvious trends. We will use `geom_line` to create the line graph and then add `geom_smooth` to capture any trends.
+
+```{r time series, echo=TRUE}
+dallas_animals %>% count(intake_date) %>%
+  ggplot(aes(x = intake_date, y = n)) +
+  geom_line() +
+  geom_smooth(method = 'auto') +
+  xlab("Intake Date") +
+  ylab("Number of Animals")
+```
+
+This graph shows us that we have years worth data from the Dallas Animal Shelter. It also shows us that we could possibly have some cyclical data. The smoothing line dips in the winter months and then spikes in the spring and summer months.
+
+The next, and maybe most obvious, thing to look at would be the types of animals the Dallas Animal Shelter is taking in. We can use `geom_bar` to create a bar graph for visually seeing what types of animals the Dallas Animal Shelter has taken in over the year. In addition, we can add labels to the graph to get the actual number.
+
+```{r animal types, echo=TRUE}
+dallas_animals %>% count(animal_type) %>%   #count the number of animals
+  ggplot(aes(x = animal_type, y = n)) +
+  geom_bar(stat = "identity") +             #create a bar graph
+  geom_text(aes(label = comma(n)),          #add labels to the graph with a 1,000's comma
+            position = position_dodge(0.9),
+            vjust = -0.3) +
+  xlab("Animal Type") +
+  ylab("Number of Animals")
+```
+
+As expected, there are way more dogs than anything else and second we see a lot of cats. Because of the large percentage of dogs compared to everything else, it will be worth taking a closer look at dogs specifically.
