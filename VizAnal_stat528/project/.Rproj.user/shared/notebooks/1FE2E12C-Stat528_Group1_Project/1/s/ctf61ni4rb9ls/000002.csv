@@ -1,0 +1,5 @@
+"0","dallas_dogs <- dallas_animals %>% filter(animal_type == ""DOG"")
+"
+"2","Error in dallas_animals %>% filter(animal_type == ""DOG"") : 
+  could not find function ""%>%""
+"

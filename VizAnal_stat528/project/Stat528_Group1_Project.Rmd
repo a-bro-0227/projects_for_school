@@ -93,8 +93,33 @@ dallas_animals %>% count(animal_type) %>%   #count the number of animals
   geom_text(aes(label = comma(n)),          #add labels to the graph with a 1,000's comma
             position = position_dodge(0.9),
             vjust = -0.3) +
+  ggtitle("Animal Intake Types") +
   xlab("Animal Type") +
-  ylab("Number of Animals")
+  ylab("Number of Animals") +
+  theme(plot.title = element_text(face="bold"))
 ```
 
-As expected, there are way more dogs than anything else and second we see a lot of cats. Because of the large percentage of dogs compared to everything else, it will be worth taking a closer look at dogs specifically.
+As expected, there are way more dogs than anything else. Because of the large percentage of dogs compared to every other animal type, it will be worth taking a closer look at dogs specifically. We will save a data set called `dallas_dogs` which contains only the animal type `DOG`.
+
+```{r dog data, echo=TRUE}
+dallas_dogs <- dallas_animals %>% filter(animal_type == "DOG")
+```
+
+With the dog data, we can take a look at what kinds of breeds the Dallas Animal Shelter is taking in. Since there is so many dog breeds, we will filter down to the top 10 types of dog breeds that Dallas Animal Shelter is taking in.
+
+```{r dog breeds, echo=TRUE}
+dallas_dogs %>%
+  count(animal_breed) %>%
+  top_n(n = 10, wt = n) %>%
+  ggplot(aes(x = reorder(animal_breed, -n), y = n)) +
+  geom_bar(stat = "identity") +             #create a bar graph
+  geom_text(aes(label = comma(n)),          #add labels to the graph with a 1,000's comma
+            position = position_dodge(0.9),
+            vjust = -0.1) +
+  ggtitle("Top 10 Dog Breed Intake") +
+  xlab("Animal Breed") +
+  ylab("Number of Animals") +
+  theme(plot.title = element_text(face="bold"),
+        axis.text.x = element_text(angle = 90))
+```
+
