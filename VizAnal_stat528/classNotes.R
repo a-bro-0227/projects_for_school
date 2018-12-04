@@ -384,6 +384,7 @@ library(xml2)
 library(rvest)
 library(tidyverse)
 library(lubridate)
+library(RColorBrewer)
 
 url <- "http://www.realclearpolitics.com/epolls/2016/president/us/general_election_trump_vs_clinton-5491.html"
 doc <- read_html(url)
@@ -415,8 +416,62 @@ polls <- clean02 %>%
 
 levels(as.factor(polls$pollster))
 
-polls %>%
-  ggplot(aes(x = End_Date, y = Clinton - Trump, colour = pollster))
+head(polls)
+
+important_dates <- data.frame(date = ymd(c("2016-11-09", "2016-09-26", "2016-10-09", "2016-10-19",
+                                           "2016-07-15", "2016-07-25", "2016-07-18", "2016-07-28")),
+                              type = c("Election Day", "1st Debate", "2nd Debate", "3rd Debate",
+                                      "RNC Start", "DNC Start", "RNC End", "DNC End"))
+
+k <- length(levels(as.factor(polls$pollster)))
+brewer.pal(n = k-1, name = "Paired")
+
+p <- polls %>%
+  ggplot(aes(x = End_Date, y = Clinton - Trump, colour = pollster)) +
+  annotate("text", x = min(polls$Start_Date), y = 10, label = "Clinton",
+           size = 20, colour = "grey90", hjust = 0) +
+  annotate("text", x = min(polls$Start_Date), y = -10, label = "Trump",
+           size = 20, colour = "grey90", hjust = 0) +
+  geom_point() +
+  geom_smooth(colour = "grey50", se = F) +
+  geom_hline(yintercept = 0, colour = "grey80") +
+  geom_vline(aes(xintercept = as.numeric(date)), colour = "grey80", data = important_dates) +
+  geom_segment(aes(x = Start_Date, xend = End_Date, yend = Clinton - Trump)) +
+  xlab("Date") +
+  ylab("Percentage Point Diff") +
+  theme(legend.position = "bottom") +
+  theme_bw() +
+  ylim(c(-15, 15))
+
+p + ggrepel::geom_label_repel(aes(x = date, label = type), colour = "grey90", y = -13, data = important_dates)
+
+library(plotly)
+ggplotly(p)
+
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+fars <- src_sqlite("F:/School/ISU/Visual Business Analytics/Data and Markdown files/Related Materials week 12/fars2014")
+fars
+
+accidents <- tbl(fars, "accidents")
+accidents %>% filter(between(LONGITUD, -130, 0))
+
+accidents %>%
+  filter(between(LONGITUD, -130, 0)) %>%
+  collect() %>%
+  ggplot(aes(LONGITUD, LATITUDE)) +
+  geom_point(alpha = 0.5, size = 0.5)
+
+acc.summ <- accidents %>% group_by(DAY_WEEK, HOUR, DRUNK_DR) %>% summarize(COUNT_ACCIDENTS = n()) %>% collect()
+acc.summ <- acc.summ %>% mutate(ALCOHOL = DRUNK_DR > 0) %>% filter(HOUR <= 24)
+
+acc.summ %>%
+  ggplot(aes(x = HOUR, y = COUNT_ACCIDENTS, colour = ALCOHOL)) +
+  geom_point() +
+  facet_wrap( ~ DAY_WEEK)
+
 #====Quizzes====
 #quiz 5
 y <- matrix(data = c(1, 1, 5, 3, 4, 2), nrow = 3, ncol = 2)

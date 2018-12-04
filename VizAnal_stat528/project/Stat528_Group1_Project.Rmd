@@ -9,76 +9,102 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Project Description
+## Project and Data Description
 
-For our group assignment, we have chose to look at and Animal Shelter's Data set from Dallas. This data can be found on the [TidyTuesday](https://github.com/rfordatascience/tidytuesday) project website at the following link: [week18_dallas_animals.xlsx](https://github.com/rfordatascience/tidytuesday/blob/master/data/2018-07-31/week18_dallas_animals.xlsx)
+For our group assignment, we have chose to look at a data set from an Animal Shelter's in Dallas, TX. Animal shelters help animals find new homes and maintain a safe city. We believe this data set can be used to help this shelter save money and operate more efficiently. In addition this data set can be used in various ways such as marketing, keeping appropriate inventory of pet supplies on hand, and staffing necessary resources at certain times.
 
-We are interested in this data set because it provides a variety of information and data type classes and we believe valuable conclusions can be drawn from it. Some of the questions we aim to answer include:
+The Dallas Animal Shelter data set can be found on the [TidyTuesday](https://github.com/rfordatascience/tidytuesday) project website at the following link: [week18_dallas_animals.xlsx](https://github.com/rfordatascience/tidytuesday/blob/master/data/2018-07-31/week18_dallas_animals.xlsx)
 
-* Is there any seasonality for adoptions and intake?
+Each data point represents a different animal that entered the shelter identified by an `andimal_id`. Each observation contains what the `intake_type` was and `outcome_type` was and dates of these events. In addition, there is information about the type and breed of the animal and what condition the animal was in at the time of intake and at the time of the outcome.
+
+Our intentions with this data set is to answer a multitude of different questions that could help the animal shelter in the future. We think the following questions can help the animal shelter optimize a plan for incoming pets and try to maximize the opportunity for a pet to get adopted:
+
+* Is there any spikes for adoptions and intake? And can we link them to any reasons?
 * How long are animals typically at the shelter? How long for different outcomes?
 * Which animals are most likely to be adopted?
 * Which animals/breed  are adopted the quickest?
-* Does a particular animal origin or intake type lead to a faster turnaround?
-
-We think these questions can help the animal shelter optimize a plan for incoming pets and try to maximize the opportunity for a pet to get adopted.
+* Does a particular `intake_type` or condition lead to a faster turnaround?
 
 ## Initial Investigation
 
-Unfortunately, there are issues reading this file directly from the website. We have downloaded this file and created a project for to read in the file.
+To read in this data, we have downloaded the file from the above link and created a project to easily read in the file. This `R-Markdown` is part of a package. If you un-zip and open the package, you should be able to run this code easily. One thing to note, the following packages were used to create this report and you will need to `install.packages` before running the code:
 
-First, we will review what sheets this file contains.
+* `readxl` - to read in excel files.
+* `scales` - for adjusting graphics legends and axes.
+* `lubridate` - fast and user friendly way to work with dates.
+* `rvest` - for scraping information off of the web.
+* `RColorBrewer` - for changing graph colors
+* `tidyverse` - a collection of packages to manipulate and graph data.
 
-```{r set up, echo=TRUE}
+
+```{r library bank, echo=FALSE}
 #====library bank====
 library(readxl)
 library(scales, warn.conflicts = F)
 library(lubridate,warn.conflicts = F)
+library(rvest, warn.conflicts = F, quietly = T)
+library(RColorBrewer)
 suppressPackageStartupMessages(library(tidyverse,
                                        warn.conflicts = F))
+```
 
-# url <- "https://github.com/rfordatascience/tidytuesday/blob/master/data/2018-07-31/week18_dallas_animals.xlsx"
-# destfile <- "week18_dallas_animals.xlsx"
-# download.file(url, destfile)
+To get started, we will walk you through our analysis process. The first thing to note, is that this file as multiple sheets. To review what sheets this file contains we use `excel_sheets` from the `readxl` package.
 
+```{r excel sheets, echo=TRUE}
 excel_sheets("week18_dallas_animals.xlsx")
 ```
 
-We can see there there are two tabs: `raw` and `simple`. It would probably be a good idea to use the `raw` table since there is more information. To make sure there are no columns in the `simple` tab that are not in the `raw` tab, we will `left_join` the `raw` tab's column names to the `simple` tab's column names and make sure there is no `NA` values and then ensure the lengths are the same.
+We can see there are two tabs: `raw` and `simple`. It would probably be a good idea to use the `raw` table since there is more information. To make sure there are no columns in the `simple` tab that are not in the `raw` tab, we will `left_join` the `raw` tab's column names to the `simple` tab's column names and make sure there is no `NA` values and then ensure the lengths of each tab are the same.
 
-```{r col check, echo=TRUE}
+```{r col and row check, echo=TRUE}
+#check that no columns in raw tab are in the simple tab.
 suppressWarnings(data.frame(colname_simple = as.character(colnames(read_excel("week18_dallas_animals.xlsx", sheet = "simple")))) %>%
   left_join(data.frame(colname_simple = as.character(colnames(read_excel("week18_dallas_animals.xlsx", sheet = "raw"))),
                        colname_raw = as.character(colnames(read_excel("week18_dallas_animals.xlsx", sheet = "raw")))),
             by = "colname_simple"))
-       
-```
 
-```{r length data, echo=TRUE}
+#check that rows are the same length
 nrow(read_excel("week18_dallas_animals.xlsx", sheet = "simple")) == nrow(read_excel("week18_dallas_animals.xlsx", sheet = "raw"))
 ```
 
-Great! We can see that `simple` is just a subset of `raw`. In that case, we will just use the `raw` tab in case there are some conclusions that can be drawn from the `raw` tab information that cannot be drawn from the `simple` tab.
+Great! We can see that `simple` is just a subset of `raw`. In that case, we will just use the `raw` tab and filter out columns that really won't help us in case there are some conclusions that can be drawn from the `raw` tab information that cannot be drawn from the `simple` tab.
 
-Now, we will finally read in the data and create a the data frame `dallas_animals`.
+Now, we will finally read in the data and create a the data frame `dallas_animals`. We will use `read_excel` from the `readxl` package and set the `sheet` equal to `raw`.
 
 ```{r read in file, echo=TRUE}
 dallas_animals <- read_excel("week18_dallas_animals.xlsx", sheet = "raw", na = "NA")
 ```
 
-To further investigate this data, we can use `glimpse` which will give us the dimensions of the data, the names of the columns in the data frame, and the column types. in addition we will get to see some of the first few rows of the data.
+To further investigate this data, we can use `glimpse` which will give us the dimensions of the data, the names of the columns in the data frame, and the column types. In addition we will get to see some of the first few rows of the data.
 
 ```{r glimpse, echo=TRUE}
 glimpse(dallas_animals)
 ```
 
+You can see there is a lot of columns there. Some that will be beneficial that were not in the `simple` tab, and some that we can be thrown out. We will use `select` from `dplyr` package with a minus sign to de-select insignificant columns.
+
+```{r de-select columns, echo=FALSE}
+dallas_animals <- dallas_animals %>%
+  select(-c(kennel_status, tag_type, activity_number, activity_sequence, source_id,
+            census_tract, receipt_number, impound_number, service_request_number,
+            chip_status, year)) %>%
+  rename(year = mo_year)
+  
+```
+
+After review, the below columns are the only ones could be potentially beneficial to this analysis:
+
+```{r columns selected, echo=FALSE}
+colnames(dallas_animals)
+```
+
 ## Seasonality for Intake and Adoption
 
-First, we want to unveil any seasonality in the data for intake and adoption. To do this, we will create a time series analysis for both the `intake_date` column and the `outcome_date` column. These columns tell us when the animal was taken into the Dallas Animal Shelter and when they left the Dallas Animal Shelter, respectively. In addition, we will look at the types of intakes and outcomes.
+To get a better understanding of our data we will use a time series analysis for the number of intakes and the number of outcomes. This will give us an understanding of the time frame of our data and see if we can unveil any possible seasonality in the Dallas Animal Shelter data for intake and adoption. In addition, we will look at the types of intakes and outcomes.
 
 ### Intake Analysis
 
-We can see there is `r format(nrow(dallas_animals), big.mark = ",", scientific = FALSE, trim = F)` animals which the Dallas Animal Shelter has taken in. To further investigate this number, we can create a time series graph which will give us an idea of the time frame of our data and any obvious trends. We will use `geom_line` to create the line graph and then add `geom_smooth` to capture any trends.
+There is **`r format(nrow(dallas_animals), big.mark = ",", scientific = FALSE, trim = F)`** animals which the Dallas Animal Shelter has taken in. The time series graph below which gives us an idea of the time frame of our data and any obvious trends. To create this graph, we will use `geom_line` to create the line graph and then add `geom_smooth` to capture any trends.
 
 ```{r time series intake, echo=TRUE}
 dallas_animals %>% count(intake_date) %>%
@@ -88,12 +114,13 @@ dallas_animals %>% count(intake_date) %>%
   ggtitle("Intake Time Series") +
   xlab("Intake Date") +
   ylab("Number of Animals") +
-  theme(plot.title = element_text(face="bold"))
+  theme(plot.title = element_text(face="bold")) +
+  theme_bw()
 ```
 
-This graph shows us that we have years worth data from the Dallas Animal Shelter. It also shows us that we could possibly have some cyclical data. The smoothing line dips in the winter months and then spikes in the spring and summer months.
+This graph shows us that we have one years worth data from the Dallas Animal Shelter. It also shows us that we could possibly have some cyclical data. The smoothing line dips in the winter months and then spikes in the spring and summer months. However, one years worth of data is not really sufficient for identifying seasonality. Another thing to point out is that there are large spikes and dips in our data. If this is the case when we investigate adoption, it will be worth while to take a look at days around the holiday's to see if there are any spikes around the holiday's, especially Christmas.
 
-Next, we will look at why animals are being administered to the Dallas Animal Shelter.
+Right now, we will look at why animals are being administered to the Dallas Animal Shelter. The graph below shows different `intake_types` ordered from most common `intake_type` to least common.
 
 ```{r intake types, echo=TRUE}
 dallas_animals %>% count(intake_type) %>%   #count the number of animals
@@ -101,15 +128,41 @@ dallas_animals %>% count(intake_type) %>%   #count the number of animals
   geom_bar(stat = "identity") +             #create a bar graph
   geom_text(aes(label = comma(n)),          #add labels to the graph with a 1,000's comma
             position = position_dodge(0.9),
-            vjust = 0.1) +
+            vjust = 0.1,
+            hjust = -0.2) +
   ggtitle("Intake Types") +
   xlab("Intake Type") +
   ylab("Number of Animals") +
+  scale_y_continuous(labels = comma, limits = c(0, 25000)) +
   theme(plot.title = element_text(face="bold")) +
+  theme_bw() +
   coord_flip()
 ```
 
-Lastly, for the intake section we will look at what types of animals the Dallas Animal Shelter is taking in. We can use `geom_bar` to create a bar graph for visually seeing what types of animals the Dallas Animal Shelter has taken in over the year. In addition, we can add labels to the graph to get the actual number.
+We can see that `Owner Surrender` and `Stray` is high on the list. To look closer at these predominate `intake_type`s, we will add a column to the data set called `intake_day` which gives the day of the week of the `intake_date`. Then we can `filter` down to `intake_type`s equal to `STRAY` or `OWNER SURRENDER`. Then we can make a graph to see if there are days of the week where an owner is more likely to surrender their pet or it is more likely someone will call in a stray.
+
+```{r day of week, echo=FALSE}
+dallas_animals <- dallas_animals %>% mutate(intake_day = wday(intake_date, label = TRUE))
+```
+
+```{r top intake by day, echo=TRUE}
+dallas_animals %>% filter(intake_type == "STRAY" | intake_type == "OWNER SURRENDER") %>%
+  ggplot(aes(x = intake_day, fill = intake_type)) +
+  geom_bar() +
+  facet_wrap( ~ intake_type) +
+  ggtitle("Intake Type by Day") +
+  xlab("Intake Day") +
+  ylab("Number of Animals") +
+  labs(fill = "Intake Type") +
+  scale_y_continuous(labels = comma) +
+  theme_bw() +
+  theme(plot.title = element_text(face="bold")) +
+  scale_fill_brewer(palette="Set1")
+```
+
+There are a couple things we can identify from this graph. One is that intake's are slow on Sundays. After reviewing the Dallas Animal Shelter hours online, the hours are shorter on Sunday, but they seem to have reasonalbe hours every day of the week (assuming I am looking at the right shelter). Another interesting conclusion from this graph, is that there is a larger number or strays found on Wednesdays.
+
+Lastly, for the intake section we will look at what types of animals the Dallas Animal Shelter is taking in.
 
 ```{r animal types intake, echo=TRUE}
 dallas_animals %>% count(animal_type) %>%   #count the number of animals
@@ -121,11 +174,76 @@ dallas_animals %>% count(animal_type) %>%   #count the number of animals
   ggtitle("Animal Intake Types") +
   xlab("Animal Type") +
   ylab("Number of Animals") +
-  theme(plot.title = element_text(face="bold"))
+  scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(face="bold")) +
+  theme_bw()
 ```
 
-As expected, there are way more dogs than anything else. Because of the large percentage of dogs compared to every other animal type, it will be worth taking a closer look at dogs specifically. Before we do that, we should finish our analysis on the collection of animals. In case we add any variables, we want to capture those in the dog analysis.
+As expected, there are way more dogs than anything else. Because of the large percentage of dogs compared to every other animal type, it will be worth taking a closer look at dogs specifically. Before we get indepth with our dog analysis, we should finish our analysis on the collection of animals. That way, if we add any variables we will capture those variables in the dog analysis. For now, we can see what types of dog breeds the Dallas Animal Shelter is taking in and why.
 
+Because there are so many dog breed types, we will lump the 20% least common types of dog breeds brought into the Dallas Animal Shelter as `OTHER`. In other words, we will look at the top 80% most common types of dog breeds by name and then lump all other dog breed types into one category.
+To do this, we will create a new data frame called `dog_breed` and then add a cummulative percent with the function `cumsum`. With an `ifelse` statement we denote dog breed above 80% in the cummulative column as `OTHER` in a new column `new_breed` and then `left_join` that back into our data frame.
+
+```{r dog breeds, echo=TRUE}
+dog_breed <- dallas_animals %>%
+  filter(animal_type == "DOG") %>%
+  count(animal_breed) %>%
+  rename(count_dogs = n) %>%
+  arrange(desc(count_dogs)) %>%
+  mutate(percent_dogs = round(count_dogs/sum(count_dogs), 2),
+         cum_percent = cumsum(percent_dogs),
+         new_breed = ifelse(cum_percent > 0.8, "OTHER", animal_breed))
+
+dallas_animals <- dallas_animals %>%
+  left_join(dog_breed %>%
+              select(animal_breed, new_breed),
+            by = "animal_breed")
+```
+
+
+
+```{r dog breed types, echo=TRUE}
+dallas_animals %>%
+  filter(animal_type == "DOG") %>%
+  count(new_breed) %>%   #count the number of animals
+  ggplot(aes(x = reorder(new_breed, n), y = n)) +
+  geom_bar(stat = "identity") +             #create a bar graph
+  geom_text(aes(label = comma(n)),          #add labels to the graph with a 1,000's comma
+            position = position_dodge(0.9),
+            vjust = 0.1,
+            hjust = -0.2) +
+  ggtitle("Count of Dog Breeds") +
+  xlab("Dog Breed") +
+  ylab("Number of Animals") +
+  scale_y_continuous(labels = comma, limits = c(0, 6500)) +
+  theme(plot.title = element_text(face="bold")) +
+  theme_bw() +
+  coord_flip()
+```
+
+
+
+
+From there we can create a graphic which tells us the how the different types of dog breeds come into the shelter.
+
+
+```{r dog breed intake, echo=TRUE}
+dallas_animals %>%
+  filter(animal_type == "DOG") %>%
+  count(intake_type, new_breed) %>%
+  ggplot(aes(x = reorder(intake_type, n),
+             y = reorder(new_breed, n),
+             fill = n)) +
+  geom_tile() +
+  ggtitle("Dog Breed Intake Types") +
+  xlab("Intake Type") +
+  ylab("Animal Breed") +
+  labs(fill='Count of Dogs') +
+  theme_bw() +
+  theme(plot.title = element_text(face="bold"),
+        axis.text.x = element_text(angle = 45)) +
+  scale_fill_gradient(low = "white", high = "steelblue")
+```
 ### Outcome Analysis
 
 Next we will do the same type of analysis on outcomes. First, we will do a time series analysis on the `outcome_date`.
@@ -138,7 +256,8 @@ dallas_animals %>% filter(!is.na(outcome_date)) %>% count(outcome_date) %>%
   ggtitle("Outcome Time Series") +
   xlab("Outcome Date") +
   ylab("Number of Animals") +
-  theme(plot.title = element_text(face="bold"))
+  theme(plot.title = element_text(face="bold")) +
+  theme_bw()
 ```
 
 This graph shows us the same as our intake data, the smoothing line dips in the winter months and then spikes in the spring and summer months. Next, we will look at the types of outcomes there are.
@@ -149,20 +268,40 @@ dallas_animals %>% count(outcome_type) %>%   #count the number of animals
   geom_bar(stat = "identity") +             #create a bar graph
   geom_text(aes(label = comma(n)),          #add labels to the graph with a 1,000's comma
             position = position_dodge(0.9),
-            vjust = 0.1) +
+            vjust = 0.1,
+            hjust = -0.2) +
   ggtitle("Outcome Types") +
   xlab("Outcome Type") +
   ylab("Number of Animals") +
+  scale_y_continuous(labels = comma, limits = c(0, 12500)) +
   theme(plot.title = element_text(face="bold")) +
+  theme_bw() +
   coord_flip()
+```
+
+
+```{r top intake by day, echo=TRUE}
+dallas_animals %>% filter(outcome_type == "ADOPTION" | outcome_type == "EUTHANIZED" | outcome_type == "TRANSFER" | outcome_type == "RETURNED TO OWNER") %>%
+  ggplot(aes(x = intake_day, fill = outcome_type)) +
+  geom_bar() +
+  facet_wrap( ~ intake_type) +
+  ggtitle("Intake Type by Day") +
+  xlab("Intake Day") +
+  ylab("Number of Animals") +
+  labs(fill = "Intake Type") +
+  scale_y_continuous(labels = comma) +
+  theme_bw() +
+  theme(plot.title = element_text(face="bold")) +
+  scale_fill_brewer(palette="Set1")
 ```
 
 ## Time at Dallas Animal Shelter
 
-An animal shelter obviously houses animals, but sadly, it only has room for so many animals. To understand how long animals are in the shelter, we will add a variable called `total_time` which indicates how many days the animal was in the shelter by using `datediff` on `intake_date` and `outcome_date`.
+An animal shelter obviously houses animals, but sadly, only has room for so many animals. To understand how long animals are in the shelter, we will add a variable called `total_time` which indicates how many days the animal was in the shelter by using `datediff` on `intake_date` and `outcome_date`.
 
 ```{r time in shelter, echo=TRUE}
-dallas_animals <- dallas_animals %>% mutate(total_time = difftime(outcome_date, intake_date, units = "days"))
+dallas_animals <- dallas_animals %>%
+  mutate(total_time = difftime(outcome_date, intake_date, units = "days"))
 ```
 
 The first thing we can do is look at the average amount of time an animal spends at the Dallas Animal Shelter by taking the mean of the variable `total_time` which we just added. Average Time at Dallas Animal Shelter = `r round(mean(dallas_animals$total_time, na.rm = T), 2)`
@@ -170,13 +309,38 @@ The first thing we can do is look at the average amount of time an animal spends
 Next, we can look at the average time for different `outcome_types`. We will need to use `group_by` on `outcome_type` and `summarize` to get the mean.
 
 ```{r mean outcome type, echo=TRUE}
-dallas_animals %>% group_by(outcome_type) %>% summarize(avg_time = round(mean(total_time, na.rm = T), 2))
+dallas_animals %>%
+  group_by(outcome_type) %>%
+  summarize(avg_time = round(mean(total_time, na.rm = T), 2)) %>%
+  arrange(desc(avg_time))
+```
+
+This tells us that if there is an issue with a report, the animal will likely be there a longer time.
+
+One thing we can do to take a closer look at how long an animal spends at the Dallas Animal Shelter is to include `intake_condition` to our grouping.
+
+```{r intake condition and time spent, echo=TRUE}
+# dallas_animals %>%
+#   group_by(intake_condition, outcome_type) %>%
+#   summarize(avg_time = round(as.numeric(mean(total_time, na.rm = T)), 2)) %>%
+#   ggplot(aes(x = reorder(outcome_type, avg_time),
+#              y = reorder(intake_condition,
+#                          c("HEALTHY",
+#                            "TREATABLE REHABILITABLE NON-CONTAGIOUS",
+#                            "TREATABLE REHABILITABLE CONTAGIOUS",
+#                            "TREATABLE MANAGEABLE NON-CONTAGIOUS",
+#                            "TREATABLE REHABILITABLE CONTAGIOUS",
+#                            "UNHEALTHY UNTREATABLE NON-CONTAGIOUS",
+#                            "UNHEALTHY UNTREATABLE CONTAGIOUS")),
+#              fill = avg_time)) +
+#   geom_tile() + scale_fill_gradient(low = "white", high = "steelblue") +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
 ## Plans for Further work:
 
 We will dive deeper into time spent at the Dallas Animal Shelter answering questions like "what type of animal is adopted faster?", "what time of intake is more likely to get adopted?"
-Because of the majority of the data is dog realted, we will dive further into the dogs and dog breeds. Looking at "does intake type correlate to time spent or adoption rate?"and "which breeds are adopted the quickest?" 
+Because of the majority of the data is dog related, we will dive further into the dogs and dog breeds. Looking at "does intake type correlate to time spent or adoption rate?"and "which breeds are adopted the quickest?" 
  
 ## Dog Data Analysis
 To take a closer look at the dog data, we will save a data set called `dallas_dogs` which contains only the animal type `DOG`.
@@ -204,3 +368,23 @@ dallas_dogs %>%
 ```
 
 
+
+```{r dog breed outcomes, echo=TRUE}
+
+dallas_animals %>%
+  filter(animal_type == "DOG") %>%
+  count(outcome_type, new_breed) %>%
+  ggplot(aes(x = reorder(outcome_type, n),
+             y = reorder(new_breed, n),
+             fill = n)) +
+  geom_tile() +
+  ggtitle("Dog Breed Outcomes Types") +
+  xlab("Intake Type") +
+  ylab("Animal Breed") +
+  labs(fill='Count of Dogs') +
+  theme_bw() +
+  theme(plot.title = element_text(face="bold"),
+        axis.text.x = element_text(angle = 45)) +
+  scale_fill_gradient(low = "white", high = "steelblue")
+
+```
