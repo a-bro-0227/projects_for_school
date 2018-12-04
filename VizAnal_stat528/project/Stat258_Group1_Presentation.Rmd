@@ -11,19 +11,21 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Project Description
 
-For our group assignment, we have chose to look at a data set from an Animal Shelter's in Dallas, TX. Animal shelters help animals find new homes and maintain a safe city. We believe this data set can be used to help this shelter save money and operate more efficiently. In addition this data set can be used in various ways such as marketing, keeping appropriate inventory of pet supplies on hand, and staffing necessary resources at certain times.
+For our group assignment, we have chose to look at a data set from an Animal Shelter in Dallas, TX. Animal shelters help animals find new homes and maintain a safe city. We believe this data set can be used to help this shelter save money and operate more efficiently. In addition, this data set can be used in various ways such as marketing, keeping appropriate inventory of pet supplies on hand, and staffing necessary resources at certain times.
 
 The Dallas Animal Shelter data set can be found on the [TidyTuesday](https://github.com/rfordatascience/tidytuesday) project website at the following link: [week18_dallas_animals.xlsx](https://github.com/rfordatascience/tidytuesday/blob/master/data/2018-07-31/week18_dallas_animals.xlsx)
 
 ## Outline
 
-Our intentions with this data set is to answer a multitude of different questions that could help the animal shelter in the future. We think the following questions can help the animal shelter optimize a plan for incoming pets and try to maximize the opportunity for a pet to get adopted:
+This presentation is meant for discussion topics. Anlayis of the graphs will be brief. Further analysis can be found in the report to come.
 
-* Is there any spikes for adoptions and intake? And can we link them to any reasons?
-* How long are animals typically at the shelter? How long for different outcomes?
-* Which animals are most likely to be adopted?
-* Which animals/breed  are adopted the quickest?
-* Does a particular `intake_type` or condition lead to a faster turnaround?
+* Packages Used in Analysis
+* Brief Description of the Dallas Animal Shelter Data
+* Description on Manipulations to Data
+* Dimensions of Data
+* Intake Analysis
+* Time at Shelter Analysis
+* Outcome Analysis
 
 ## Packages Used
 
@@ -47,7 +49,7 @@ suppressPackageStartupMessages(library(tidyverse,
 
 ## The Data
 
-Each data point represents a different animal that entered the shelter identified by an `andimal_id`. Each observation contains what the `intake_type` was and `outcome_type` was and dates of these events. In addition, there is information about the type and breed of the animal and what condition the animal was in at the time of intake and at the time of the outcome.
+Each data point represents a different animal that entered the shelter identified by an `andimal_id`. Each observation contains what the `intake_type` was and what the `outcome_type` was and dates of these events. In addition, there is information about the type and breed of the animal and what condition the animal was in at the time of intake and at the time of the outcome.
 
 ```{r read in file, echo=FALSE}
 o_dallas_animals <- read_excel("week18_dallas_animals.xlsx", sheet = "raw", na = "NA")
@@ -55,9 +57,9 @@ o_dallas_animals <- read_excel("week18_dallas_animals.xlsx", sheet = "raw", na =
 
 ## Data Manipulations
 
-* Added `intake_day` and `outcome_day` which represents the day of the week when the intake or ourcome happened
-* Added `total_time` which represents the number or days of the animal was at the shelter
-* Grouped dog breeds which that accounted for less than 80% of the dogs into the breed `OTHER`
+* Added `intake_day` and `outcome_day` which represents the day of the week when the intake or outcome happened, respectively
+* Added `total_time` which represents the number or days of the animal was at the shelter.
+* Lumped the 20% least common types of dog breeds brought into the Dallas Animal Shelter as `OTHER`.
 
 ```{r manipulations, echo=FALSE}
 dallas_animals <- o_dallas_animals %>%
@@ -84,7 +86,7 @@ dallas_animals <- dallas_animals %>%
             by = "animal_breed")
 ```
 
-## Data Used
+## Data Dimensions
 
 ```{r columns used, echo=FALSE}
 data.frame(numb_rows = nrow(dallas_animals), numb_col = ncol(dallas_animals))
@@ -129,7 +131,7 @@ dallas_animals %>% count(intake_type) %>%   #count the number of animals
   coord_flip()
 ```
 
-## Top Intakes Types by Day
+## Intake Analysis | Top Intakes Types by Day
 
 ```{r top intake by day, echo=FALSE}
 dallas_animals %>% filter(intake_type == "STRAY" | intake_type == "OWNER SURRENDER") %>%
@@ -139,7 +141,7 @@ dallas_animals %>% filter(intake_type == "STRAY" | intake_type == "OWNER SURREND
   ggtitle("Intake Type by Day") +
   xlab("Intake Day") +
   ylab("Number of Animals") +
-  labs(fill = "Intake Type") +
+  labs(fill = "Day of Week") +
   scale_y_continuous(labels = comma) +
   theme_bw() +
   theme(plot.title = element_text(face="bold")) +
@@ -165,7 +167,7 @@ dallas_animals %>% count(animal_type) %>%   #count the number of animals
 
 ## Intake Analysis | Dogs
 As expected, there are way more dogs than anything else. Because of the large percentage of dogs compared to every other animal type, it will be worth taking a closer look at dogs specifically.
-As mentioned before, because there are so many dog breed types, we will lump the 20% least common types of dog breeds brought into the Dallas Animal Shelter as `OTHER`.
+As mentioned before, because there are so many dog breed types, we lumped the 20% least common types of dog breeds brought into the Dallas Animal Shelter as `OTHER`.
 
 ## Intake Analysis | Dog Breeds
 
@@ -179,12 +181,12 @@ dallas_animals %>%
             position = position_dodge(0.9),
             vjust = 0.1,
             hjust = -0.2) +
-  ggtitle("Count of Dog Breeds") +
+  ggtitle("Count of Dog Breeds Intakes") +
   xlab("Dog Breed") +
   ylab("Number of Animals") +
   scale_y_continuous(labels = comma, limits = c(0, 6500)) +
-  theme(plot.title = element_text(face="bold")) +
   theme_bw() +
+  theme(plot.title = element_text(face="bold")) +
   coord_flip()
 ```
 
@@ -198,9 +200,9 @@ dallas_animals %>%
              y = reorder(new_breed, n),
              fill = n)) +
   geom_tile() +
-  ggtitle("Dog Breed Intake Types") +
+  ggtitle("Dog Breed by Intake Types") +
   xlab("Intake Type") +
-  ylab("Animal Breed") +
+  ylab("Dog Breed") +
   labs(fill='Count of Dogs') +
   theme_bw() +
   theme(plot.title = element_text(face="bold"),
@@ -210,7 +212,22 @@ dallas_animals %>%
 
 ## Time at Dallas Animal Shelter
 
+The average amount of time an animal spends at the Dallas Animal Shelter = `r round(mean(dallas_animals$total_time, na.rm = T), 2)` Days
 
+
+```{r time at shelter, echo=FALSE}
+dallas_animals %>%
+  filter(!is.na(total_time) & (outcome_type == "ADOPTION" | outcome_type == "EUTHANIZED")) %>%
+  ggplot(aes(x = as.numeric(total_time), fill = outcome_type)) +
+  geom_histogram(bins = 20, position = "dodge") +
+  facet_wrap( ~ outcome_type) +
+  ggtitle("Histogram of Time at Shelter by Top Outcomes") +
+  xlab("Time at Shelter") +
+  ylab("Number of Animals") +
+  scale_y_continuous(labels = comma) +
+  theme_bw() +
+  theme(plot.title = element_text(face="bold"))
+```
 
 
 ## Outcome Analysis | Time Series
@@ -240,8 +257,8 @@ dallas_animals %>%
              fill = n)) +
   geom_tile() +
   ggtitle("Dog Breed Outcomes Types") +
-  xlab("Intake Type") +
-  ylab("Animal Breed") +
+  xlab("Outcome Type") +
+  ylab("Dog Breed") +
   labs(fill='Count of Dogs') +
   theme_bw() +
   theme(plot.title = element_text(face="bold"),
@@ -251,7 +268,7 @@ dallas_animals %>%
 
 ## Outcome Analysis | Dog Breed Adoption Week Days
 
-```{r dog breed outcomes, echo=FALSE}
+```{r dog breed adopted, echo=FALSE}
 dallas_animals %>%
   filter(animal_type == "DOG" & outcome_type == "ADOPTION" & !is.na(outcome_day)) %>%
   count(outcome_day, new_breed) %>%
@@ -259,12 +276,60 @@ dallas_animals %>%
              y = reorder(new_breed, n),
              fill = n)) +
   geom_tile() +
-  ggtitle("Adoption Days of Dog Breed") +
+  ggtitle("Days Dog Breeds Adopted") +
   xlab("Week Day") +
-  ylab("Animal Breed") +
+  ylab("Dog Breed") +
   labs(fill='Count of Dogs') +
   theme_bw() +
   theme(plot.title = element_text(face="bold"),
         axis.text.x = element_text(angle = 45)) +
   scale_fill_gradient(low = "white", high = "steelblue")
+```
+
+## Outcome Analysis | Adoptions by Day
+
+```{r adoption by day, echo=FALSE}
+dallas_animals %>% filter(outcome_type == "ADOPTION" & !is.na(outcome_date)) %>%
+  ggplot(aes(x = outcome_day)) +
+  geom_bar() +
+  ggtitle("Adoption by Day") +
+  xlab("Day of Week") +
+  ylab("Number of Animals") +
+  scale_y_continuous(labels = comma) +
+  theme_bw() +
+  theme(plot.title = element_text(face="bold")) +
+  scale_fill_brewer(palette="Set1")
+```
+
+## Outcome Analysis | Holidays
+
+Here we will read in a federal holiday data set from [Kaggle](https://www.kaggle.com/gsnehaa21/federal-holidays-usa-19662020) to see if adoptions spike around holidays
+
+```{r holdays, echo=FALSE}
+holidays <- read.csv("usholidays.csv", stringsAsFactors = F)
+holidays <- holidays %>% select(Date, Holiday) %>% mutate(Date = ymd(Date)) %>%
+  inner_join(dallas_animals %>%
+               select(outcome_date) %>%
+               mutate(outcome_date = ymd(outcome_date)),
+              by = c("Date" = "outcome_date")) %>%
+  distinct()
+```
+
+## Outcome Analysis | Holidays Time Series
+
+```{r time series holiday, echo=FALSE}
+dallas_animals %>%
+  filter(!is.na(outcome_date) & outcome_type == "ADOPTION") %>%
+  count(outcome_date) %>%
+  ggplot(aes(x = outcome_date, y = n)) +
+  geom_line() +
+  geom_smooth(method = 'loess') +
+  ggtitle("Adoptoin on Holidays") +
+  xlab("Outcome Date") +
+  ylab("Number of Animals") +
+  theme_bw() +
+  theme(plot.title = element_text(face="bold")) +
+  geom_vline(aes(xintercept = as.POSIXct(Date)), colour = "magenta1", data = holidays) +
+  ggrepel::geom_label_repel(aes(x = as.POSIXct(Date), label = Holiday),
+                            colour = "grey37", y = 150, data = holidays)
 ```

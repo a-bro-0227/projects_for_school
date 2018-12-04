@@ -370,7 +370,6 @@ dallas_dogs %>%
 
 
 ```{r dog breed outcomes, echo=TRUE}
-
 dallas_animals %>%
   filter(animal_type == "DOG") %>%
   count(outcome_type, new_breed) %>%
@@ -386,5 +385,4 @@ dallas_animals %>%
   theme(plot.title = element_text(face="bold"),
         axis.text.x = element_text(angle = 45)) +
   scale_fill_gradient(low = "white", high = "steelblue")
-
 ```
