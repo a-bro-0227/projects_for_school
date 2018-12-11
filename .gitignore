@@ -1,0 +1,8 @@
+
+
+# All the files that do not begin with '#' will be ignored by by git when uploading to github
+# some of the files that are being ignored are output or input files.
+
+*.RData
+*.Rhistory
+*.Rproj.user
