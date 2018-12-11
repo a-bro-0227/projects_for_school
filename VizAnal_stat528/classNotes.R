@@ -602,7 +602,7 @@ ggplot(data = na.omit(happy), aes (x = happy)) +geom_bar()
 
 
 
-
+ #check git ignore
 iris.dat <- iris %>% 
   mutate(ids = 1:n() ) %>% 
   data.frame()
