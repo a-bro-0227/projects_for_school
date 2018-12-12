@@ -1,5 +1,0 @@
-"0","#check that no columns in raw tab are in the simple tab."
-"0","suppressWarnings(data.frame(colname_simple = as.character(colnames(read_excel(""week18_dallas_animals.xlsx"", sheet = ""simple"")))) %>%"
-"0","  left_join(data.frame(colname_simple = as.character(colnames(read_excel(""week18_dallas_animals.xlsx"", sheet = ""raw""))),"
-"0","                       colname_raw = as.character(colnames(read_excel(""week18_dallas_animals.xlsx"", sheet = ""raw"")))),"
-"0","            by = ""colname_simple""))"

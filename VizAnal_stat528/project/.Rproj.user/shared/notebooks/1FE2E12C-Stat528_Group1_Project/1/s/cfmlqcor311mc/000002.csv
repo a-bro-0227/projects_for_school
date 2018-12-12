@@ -1,6 +1,0 @@
-"0","dallas_animals <- dallas_animals %>%"
-"0","  select(-c(kennel_status, tag_type, activity_number, activity_sequence, source_id,"
-"0","            census_tract, receipt_number, impound_number, service_request_number,"
-"0","            chip_status, year)) %>%"
-"0","  rename(year = mo_year)"
-"0","  "

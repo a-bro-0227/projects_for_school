@@ -7,8 +7,8 @@
     "folds" : "",
     "hash" : "390317329",
     "id" : "945DEC0F",
-    "lastKnownWriteTime" : 1543901328,
-    "last_content_update" : 1543901328807,
+    "lastKnownWriteTime" : 1544585029,
+    "last_content_update" : 1544585029711,
     "path" : "~/GitHub/projects_for_school/VizAnal_stat528/project/Stat258_Group1_Presentation.Rmd",
     "project_path" : "Stat258_Group1_Presentation.Rmd",
     "properties" : {
@@ -16,7 +16,7 @@
         "last_setup_crc32" : "",
         "tempName" : "Untitled1"
     },
-    "relative_order" : 4,
+    "relative_order" : 3,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_markdown"

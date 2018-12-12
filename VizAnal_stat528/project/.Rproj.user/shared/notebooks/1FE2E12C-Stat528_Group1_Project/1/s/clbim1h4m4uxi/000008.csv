@@ -1,6 +1,0 @@
-"0","#check that rows are the same length"
-"0","nrow(read_excel(""week18_dallas_animals.xlsx"", sheet = ""simple"")) == nrow(read_excel(""week18_dallas_animals.xlsx"", sheet = ""raw""))"
-"1","[1]"
-"1"," TRUE"
-"1","
-"
