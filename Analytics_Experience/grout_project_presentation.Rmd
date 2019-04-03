@@ -1,0 +1,258 @@
+---
+title: "Grout Mueseum Presentation"
+author: "Alex Brown"
+date: "March 10, 2019"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Overview
+
+The objective of this project is to provide a report about donation information relating to donations, revenue, and customers to try and improve knowledge of customer and/or donor base the Grout Museum has in order to better target that type of customer/donor or event.
+
+## Outline
+
+This presentation is meant for discussion topics. Analysis of the graphs will be brief. Further analysis can be found in the report to come.
+
+* Software Used in Analysis
+* Brief Description of the Donations Data
+* Time Series Analysis
+* Outlier Analysis
+* Donor Type Analysis
+* Zip-code Analysis
+* Summary & Recommendations
+* Further Studies
+
+## Software Used in Analysis
+
+* For the the donation analysis and report, R was used.
+    + Allowed for easy manipulation of data.
+    + Allowed for easy implementation of map data.
+    + Allowed for creating a markdown report.
+  
+* For the Dashboard Excel was used
+    + Allows for repeatable process.
+    + Less technical skills needed.
+
+## The Data
+
+* The data provided was information about the donations that were received.
+* Dates memberships were on sale.
+* R data sets for map information were also pulled in.
+
+```{r column-names, echo=FALSE}
+
+#clear workspace
+rm(list = ls())
+
+
+
+#====Package Bank====
+suppressMessages(library(data.table, warn.conflicts = F, quietly = T))  # for efficient reading
+suppressMessages(library(kableExtra, warn.conflicts = F))               # for table improvement
+library(gridExtra)
+suppressMessages(library(tidyverse, warn.conflicts = F))                # for efficient manipulation
+library(readxl)                                                         # for reading in excel files
+library(zipcode)                                                        # for zipcode dataframe
+library(maps, warn.conflicts = F)
+library(lubridate, warn.conflicts = F, quietly = T)
+library(RColorBrewer)
+library(scales, warn.conflicts = F)
+theme_set(theme_classic() + theme(plot.title = element_text(face="bold")))
+
+
+#====functions====
+#this function allows me to standardize state names
+simpleCap <- function(x) {
+  s <- strsplit(x, " ")[[1]]
+  paste(toupper(substring(s, 1,1)), substring(s, 2),
+        sep="", collapse=" ")
+}
+
+#====read in membership data====
+
+donations <- read_excel("F:/School/Tippie_Business Analytics/Analytics Experience/project/data/donor business or individual data for alex.xlsx", sheet = 1)
+donations <- donations %>%
+  rename(gift_amount = `Gift Amount`,
+         date = `Date of Gift`,
+         donor_type = `Donor Type Descr`,
+         zip = Zip) %>%
+  mutate(zip = gsub("-.*", "", zip))
+
+glimpse(donations)
+
+#====read in map data====
+data("zipcode")
+us_map <- map_data("state")
+
+# get zipcode lat & long
+donations_zip <- donations %>%
+  filter(!is.na(zip)) %>%
+  group_by(zip, donor_type) %>%
+  summarize(donor_count = n(),
+            gift_total = sum(gift_amount)) %>%
+  left_join(zipcode, by = "zip")
+
+# get state labels
+state_center <- read.csv("F:/School/Tippie_Business Analytics/Analytics Experience/project/data/state_latlon.csv", stringsAsFactors = F) %>%
+  inner_join(donations_zip %>%
+               ungroup() %>%
+               distinct(state),
+             by = "state")
+
+```
+
+## Time Series Analysis
+
+```{r time series analysis, echo=FALSE}
+
+donations %>%
+  count(date) %>%
+  ggplot(aes(x = as.Date(date), y = n)) +
+  geom_line() +
+  geom_smooth(method = 'loess') +
+  ggtitle("Number of Donors Over Time") +
+  xlab("Date") +
+  ylab("Number of Donors") +
+  scale_x_date(breaks = "1 month", date_labels = "%Y %b") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+## Outlier Analysis
+
+```{r outlire analysis, echo=FALSE}
+
+grid.arrange(
+  
+  donations %>%
+    filter(donor_type == "Individual") %>%
+    ggplot(aes(x = gift_amount)) +
+    geom_histogram(bins = 30) + 
+    ggtitle("Count of Inividual Donors") +
+    xlab("Gift Amount") +
+    ylab("Count of Donors") +
+    scale_x_continuous(labels = comma),
+  
+  donations %>%
+    filter(gift_amount <= 1000 & donor_type == "Individual") %>%
+    ggplot(aes(x = gift_amount)) +
+    geom_histogram(bins = 30) +
+        ggtitle("Count of Inividual Donors <= $1000") +
+    xlab("Gift Amount") +
+    ylab("Count of Donors") +
+    scale_x_continuous(labels = comma,
+                       breaks = seq(from = 0,
+                                    to = 1000,
+                                    by = 50))
+)
+
+```
+
+## Donors by Group
+
+```{r summary analysis, echo=FALSE}
+
+# add commas/dollar amounts
+
+donations %>%
+  group_by(donor_type) %>%
+  summarize(count = n(),
+            gift_mean = dollar_format(negative_parens = TRUE)(round(mean(gift_amount), digits = 2)),
+            gift_mode = dollar_format(negative_parens = TRUE)(median(gift_amount))) %>%
+  kable(caption = "Count/Mean/Median of Donations by Donor Type") %>%
+  kable_styling(bootstrap_options = c("hover", "condensed"), position = "center")
+
+```
+
+## Donors by Quarter
+
+```{r donor types by quarter, echo=FALSE}
+
+donations %>%
+  mutate(quarter = paste0(gsub("\\..*", "", quarter(date, with_year = T)),
+                          ".Qtr ",
+                          gsub(".*\\.", "", quarter(date, with_year = T)))) %>%
+  ggplot(aes(x = quarter, y = gift_amount, fill = donor_type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  ggtitle("Donor Amount by Type and Quarter") +
+  xlab("Quarter") +
+  ylab("Gift Amount") +
+  scale_y_continuous(labels = dollar_format(prefix = "$")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom",
+        legend.title=element_blank()) +
+  scale_fill_hue(c=45, l=80)
+
+```
+
+
+
+
+
+
+
+## Zip-code Analysis - Count
+
+```{r zipcode count, echo=FALSE}
+donations_zip %>%
+ggplot(aes(x = longitude, y = latitude)) +
+  geom_polygon(data=us_map,
+               aes(x = long, y = lat, group = group),
+               color='gray', fill = NA, alpha = 0.35)+
+  geom_point(aes(color = donor_type, size = donor_count), alpha = 0.25) +
+  geom_text(aes(x = longitude, y = latitude, label = state),
+            data= state_center,
+            alpha = 1,
+            color = "black",
+            size = 2.5) +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()) +
+  scale_size_continuous(labels = comma) +
+  ggtitle("Count of Donors by Zipcode") +
+  labs(size = "Donor Count", colour = "Donor Type")
+```
+
+## Zip-code Analysis - Gift
+
+```{r zipcode gift, echo=FALSE}
+donations_zip %>%
+  ggplot(aes(x = longitude, y = latitude)) +
+  geom_polygon(data=us_map,
+               aes(x = long, y = lat, group = group),
+               color='gray', fill = NA, alpha = 0.35)+
+  geom_point(aes(color = donor_type, size = gift_total), alpha = 0.25) +
+  geom_text(aes(x = longitude, y = latitude, label = state),
+            data= state_center,
+            alpha = 1,
+            color = "black",
+            size = 2.5) +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()) +
+  scale_size_continuous(labels = dollar_format(prefix = "$")) +
+  ggtitle("Gift Amount Donated by Zipcode") +
+  labs(size = "Gift Amount", colour = "Donor Type")
+```
+
+## Recommendations
+
+* Strategize to collect $50 donations
+* Increase Donations of Individuals in 2nd Qtr
+* Possibility of Donation Growth in South East
+
+## Further Studies
+
+* Look at Outcomes of Strategies Used for Collecting Donations
+* Look at Membership and Customers Data
+* Look at Longer Time Frame
