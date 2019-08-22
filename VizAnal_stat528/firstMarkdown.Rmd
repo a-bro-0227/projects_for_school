@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## This is a section header of my document
 
-In this first code chunck we see both cammands and the output:
+In this first code chunck we see both cammands and the output example change:
 
 ```{r, echo = T}
 #my own code chunk
