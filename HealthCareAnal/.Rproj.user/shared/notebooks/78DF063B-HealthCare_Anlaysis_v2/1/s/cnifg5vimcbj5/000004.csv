@@ -1,2 +1,0 @@
-"0","count_patient_return <- df_encounter %>% count(patient_id, encounter_type_name)"
-"0","data.frame(count_patient_return %>% filter(encounter_type_name == ""ADULTINITIAL""))"

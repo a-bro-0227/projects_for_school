@@ -1,6 +1,0 @@
-"0","count_patient_return <- count_patient_return %>%"
-"0","  filter(encounter_type_name == ""ADULTRETURN"" ) %>%"
-"0","  rename(number_of_returns = n)"
-"0","data.frame(count_patient_return %>%"
-"0","             count(number_of_returns) %>%"
-"0","             rename(freq_patients_returning = n))"
