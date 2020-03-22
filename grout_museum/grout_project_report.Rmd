@@ -2,7 +2,8 @@
 title: "Grout Mueseum Report"
 author: "Alex Brown"
 date: "April 7, 2019"
-output: [html_document, github_document]
+output: rmarkdown::github_document
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
