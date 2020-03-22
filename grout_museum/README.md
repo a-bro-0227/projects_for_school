@@ -8,9 +8,6 @@ output:
 ---
 
 
-```r
-knitr::opts_chunk$set(echo = FALSE, fig.path = "README_figs/README-")
-```
 
 ## Overview
 

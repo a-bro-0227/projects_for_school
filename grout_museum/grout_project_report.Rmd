@@ -7,7 +7,7 @@ output:
     keep_md: true
 ---
 
-```{r setup}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, fig.path = "README_figs/README-")
 ```
 
