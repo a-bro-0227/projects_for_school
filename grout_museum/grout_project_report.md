@@ -41,13 +41,13 @@ In addition, R data sets for map information were also pulled in. These sets inc
 
 As you can see from the `Number of Donors Over Time` graph below, there is about a years worth of data. The `Number of Donors Over Time` graph also shows that the donation data from the Grout Museum could have some seasonality. The smoothing line spikes in the winter months and then increase somewhat again in the summer months. However, one years worth of data is not really sufficient for identifying seasonality.
 
-![](README_figs/README-time series analysis-1.png)<!-- -->
+![](grout_project_report_files/figure-html/time series analysis-1.png)<!-- -->
 
 ## Outlier Analysis
 
 After many instance of trying to portray the detail of the data, and extracting useful information, I found it beneficial to look at individual donors and then weed out outliers. You can see from the `Count of Individual Donor` graph that there are a few outliers who donated more that `$10,000` to the Grout Museum. This greatly skews the data and makes it hard to see any trends. By reducing the information to individuals who donated less that `$1,000` to the Grout Museum, we can see in the `Count of Individual Donors <= $1,000` that most people are donating around 25-100 dollars. Knowing this can potentially increase focus on getting donations of that amount. On the other hand, it could just point out the strategies already being used by the Grout Museum.
 
-![](README_figs/README-outlire analysis-1.png)<!-- -->
+![](grout_project_report_files/figure-html/outlire analysis-1.png)<!-- -->
 
 ## Donors by Group
 
@@ -102,11 +102,11 @@ The table below shows the number of each donors by type, the average gift each d
 
 To look at times of year when the Grout Museum has more donations, I have broken out the donation amount by quarter. The `Donor Amount by Type and Quarter` graph below can show different times of year when you receive more donations. You can see that individuals donate fairly steady in quarters one, three, and four with a spike in winter months. This graph also shows there are less individuals donating in quarter two. This could potentially point out weak spots where the Grout Museum could target trying to increase their donation in order for a more steady donation stream over the year.
 
-![](README_figs/README-donor types by quarter-1.png)<!-- -->
+![](grout_project_report_files/figure-html/donor types by quarter-1.png)<!-- -->
 
 However, as the graph below shows, the decrease in individual donations is actually supplemented by foundation donations and the low point of year for donations is actually the first quarter.
 
-![](README_figs/README-donor types by quarter cont-1.png)<!-- -->
+![](grout_project_report_files/figure-html/donor types by quarter cont-1.png)<!-- -->
 
 ## Zip-code Analysis - Count
 
@@ -114,13 +114,13 @@ The graph below shows the count of donors by zipcode. A bigger dot, means more p
 
 As expected, most donors the Grout Museum has are around the Cedar Valley area. However, there seem to be some sporadic donors around the country especially in the south east. This could be due to the nature of the museum being a war museum and a larger concentration of navel veterans or descendants of civil war veterans living in the south east region of the US.
 
-![](README_figs/README-zipcode count-1.png)<!-- -->
+![](grout_project_report_files/figure-html/zipcode count-1.png)<!-- -->
 
 ## Zip-code Analysis - Gift
 
 Below is the same representation except the size of the dots now represent dollar amount.
 
-![](README_figs/README-zipcode gift-1.png)<!-- -->
+![](grout_project_report_files/figure-html/zipcode gift-1.png)<!-- -->
 
 ## Recommendations
 
