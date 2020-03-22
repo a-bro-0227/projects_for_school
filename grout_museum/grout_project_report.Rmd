@@ -2,12 +2,13 @@
 title: "Grout Mueseum Report"
 author: "Alex Brown"
 date: "April 7, 2019"
-output: rmarkdown::github_document
-always_allow_html: true
+output: 
+  html_document:
+    keep_md: true
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+```{r setup}
+knitr::opts_chunk$set(echo = FALSE, fig.path = "README_figs/README-")
 ```
 
 ## Overview
