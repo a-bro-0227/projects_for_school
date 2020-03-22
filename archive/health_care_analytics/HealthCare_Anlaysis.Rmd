@@ -1,0 +1,310 @@
+---
+title: "Analysis Documentation"
+author: "Alex Brown"
+date: "October 18, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Initial Set Up
+####Hypothesis
+
+####Library Bank
+
+To clean and analyze the `openmrs` database, I used R. With R I was able to read in the data tables by connecting to the `open_mrs` MS Access database by using the `odbcDriverConnect` function from the `RODBC` package. This allows connection to a database essentially using SQL. In theory, you could use this package to analyze your database with SQL queries. R can send the query to your database and then retrieve the information from you query as a data frame. This is convenient and more efficient with a large database, but R will have no problem with the tables in the`openmrs` database. Therefore, we will just use the `sqlFetch` function to retrieve the tables we need for analysis to save some typing. In addition to the `RODBC` package, I will use `ggplot2` for plotting and `dplyr` for manipulation. It's very possibly I will need other packages from the `Tidyverse` package set, so I will just load the `Tidyverse` package. In addition, I will use the `lubridate` package for manipulating dates, and the `scales` package for manipulating graphs. We can load all of these packages using the `library` function
+
+```{r load packages, echo=TRUE}
+#====library bank====
+suppressMessages(library(tidyverse, warn.conflicts = F, quietly = T))
+library(RODBC)
+library(lubridate, warn.conflicts = F)
+library(scales, warn.conflicts = F)
+```
+
+If you would like to actually run the script on your own computer, please change the below directories appropriately and be sure there is forward slashes `/` in your directory.
+
+```{r directories, echo=TRUE}
+access_database <- paste0("F:/School/Tippie_Business Analytics/Health Care Analytics", "/openmrs.accdb")
+```
+
+####Read in Tables
+
+The tables I will use for analysis from the `openmrs` database are: `mrs_concept`, `mrs_encounter`, `mrs_encounter_type`, `mrs_obs`, `mrs_patient`, `mrs_patient_program`, `mrs_program`, and `mrs_tribe`. The process for reading in the tables is the same. I picked only the needed columns and filter out any obvious mistakes. For example, in the `mrs_patient` table, `patient_id` 1 has no information and is not found in any other table we are using. I can `filter` this entry out by removing any observation with a blank `birthdate`. In addition, the `mrs_patient_program` table has the column `voided` which appeared to mean the patient was removed from the program or a mistake was made in the entry. I will show my code for loading the tables in the `Rmarkdown` file so the columns selected can be seen.
+
+*Please Note: to run this on your own computer, you will need to change the directory as noted above.*
+
+```{r connect to database, echo=TRUE}
+#connect to `openmrs` database:
+openmrs <- odbcDriverConnect(paste0("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=",
+                                    access_database))
+```
+
+```{r read in tables, echo=FALSE}
+#====reading in dataset====
+mrs_patient <- sqlFetch(openmrs, "mrs_patient",                 #what table to `fetch` from the `openmrs` database we connected to
+                        as.is = FALSE,
+                        stringsAsFactors = FALSE,
+                        na.strings = c("", "N/A")) %>%
+  filter(!is.na(birthdate)) %>%                                  #filter out blank entries
+  select(patient_id,                                             #call out columns needed
+         gender,
+         birthdate,
+         birthdate_estimated,
+         tribe_id = tribe,
+         given_name,
+         middle_name,
+         family_name,
+         city_village,
+         country)
+
+mrs_obs <- sqlFetch(openmrs, "mrs_obs",
+                    as.is = F,
+                    stringsAsFactors = FALSE,
+                    na.strings = c("", "N/A")) %>%
+  select(obs_id,
+         patient_id,
+         encounter_id,
+         order_id,
+         concept_id,
+         obs_datetime,
+         value_coded,
+         value_drug,
+         value_datetime,
+         value_numeric,
+         comments)
+
+
+mrs_concept <- sqlFetch(openmrs, "mrs_concept",
+                        as.is = F,
+                        stringsAsFactors = FALSE,
+                        na.strings = c("", "N/A")) %>%
+  select(concept_id,
+         concept_name,
+         retired,
+         short_name,
+         description,
+         datatype,
+         concept_class,
+         is_set,
+         hi_absolute,
+         hi_critical,
+         hi_normal,
+         low_absolute,
+         low_critical,
+         low_normal,
+         units,
+         precise)
+
+mrs_encounter <- sqlFetch(openmrs, "mrs_encounter",
+                          as.is = F,
+                          stringsAsFactors = FALSE,
+                          na.strings = c("", "N/A")) %>%
+  select(encounter_id,
+         encounter_type_id = encounter_type,
+         patient_id)
+  
+
+mrs_encounter_type <- sqlFetch(openmrs, "mrs_encounter_type",
+                               as.is = F,
+                               stringsAsFactors = FALSE,
+                               na.strings = c("", "N/A")) %>%
+  select(encounter_type_id,
+         encounter_type_name = name,
+         encounter_description = description)
+
+mrs_tribe <- sqlFetch(openmrs, "mrs_tribe",
+                      as.is = F,
+                      stringsAsFactors = FALSE,
+                      na.strings = c("", "N/A")) %>%
+  select(tribe_id, tribe_name = name)
+
+mrs_program <- sqlFetch(openmrs, "mrs_program",
+                        as.is = F,
+                        stringsAsFactors = FALSE,
+                        na.strings = c("", "N/A")) %>%
+  select(program_id, program_name = name)
+
+mrs_patient_program <- sqlFetch(openmrs, "mrs_patient_program",
+                                as.is = F,
+                                stringsAsFactors = FALSE,
+                                na.strings = c("", "N/A")) %>%
+  filter(voided != 1) %>%                                        #filter out voided to avoid any entry mistakes
+  select(patient_program_id,
+         patient_id,
+         program_id,
+         date_enrolled,
+         date_completed)
+
+# dfs <- sapply(.GlobalEnv, is.data.frame)
+# dfs <- dfs[dfs == T]
+# 
+# dfs <- lapply(ls(), function(x) if (class(get(x)) == "data.frame") get(x))
+# 
+# list_df = lapply(ls(), get)
+# names(list_df) = ls()
+# 
+# 
+# colnames(dfs$mrs_encounter_type[[1]])
+# colnames(mget(names(dfs)[[2]]))
+# dfs[sapply(mget(names(dfs)[dfs]), nrow)]
+
+```
+
+###Outlier Analysis
+
+####The Encounter Table
+
+To investigate the `mrs_encounter` table, I will create a new table, `df_encoutner` by joining the `mrs_encounter_type` table so the analysis will be more comprehensible. From there, I will make a bar chart to review the break down of different encounter types.
+
+```{r join encounter type, echo=FALSE}
+
+df_encounter <- mrs_encounter %>%
+  left_join(y = mrs_encounter_type %>% select(-encounter_description),
+            by = "encounter_type_id")
+
+df_encounter %>%
+  count(encounter_type_name) %>%                   #count the number of each `encounter_type`
+  ggplot(aes(x = encounter_type_name, y = n)) +    #graphs the count of `encounter_type`
+  geom_bar(stat = "identity") +                    #with a bar graph
+  geom_text(aes(label = comma(n)),                 #add labels to the graph with a 1,000's comma
+            position = position_dodge(0.9),
+            vjust = -0.3) +
+  ggtitle("Count of Encounter Types") +            #add title
+  xlab("Encounter Type") +                         #ad axes titles
+  ylab("Count of Encounters") + 
+  scale_y_continuous(labels = comma) +             #set y-axis lables to with a 1,000's comma
+  theme(plot.title = element_text(face = "bold"))  #set header to bold
+
+```
+
+We can see that there are not many `ADULTINITIAL` or `PEDSRETURN` observations. To focus the data set, I will set these types of encounters to be an outlier. To further prove these are outliers, I have created a table which counts the number of of `patient_id` and `encounter_type` occurrences called `count_patient_return`.
+
+```{r encounter outlire, echo=FALSE}
+df_encounter <- df_encounter %>%
+  mutate(outlier = ifelse(encounter_type_name != "ADULTRETURN", T, F))
+
+count_patient_return <- df_encounter %>% count(patient_id, encounter_type_name)
+
+data.frame(count_patient_return %>% filter(encounter_type_name == "ADULTINITIAL"))
+```
+
+We can see from the above table that we were right in flagging `ADULTINITIAL`. Half of the `ADULTINITIAL` observations are duplicates anyway. In addition, the `PEDSRETURN` observations are so small that, it is unlikely any conclusions can be drawn from them. In addition further analysis I applied, but will now not need to show now that I have flagged the `PEDS`, is that a portion of the observations considered `PEDS` were actually older than 18.
+
+With the data set `count_patient_return` created above, we can also see a break down of how many encounters were made with each patient. I fill filter out anything that is not `ADULTRETURN` for a better representation. In addition, I have created a table for the actual numbers.
+
+```{r graph count of encounter types, echo=FALSE}
+count_patient_return <- count_patient_return %>% filter(encounter_type_name != "ADULTRETURN")
+
+count_patient_return %>%
+ggplot(aes(x = n)) +
+  geom_histogram(bins = max(count_patient_return$n)) +
+  ggtitle("Frequency of Patients Returning") +
+  xlab("Number of Returns") + scale_x_continuous(breaks = round(seq(min(count_patient_return$n),
+                                                                    max(count_patient_return$n), by = 1),1)) +
+  ylab("Frequency of Patients") + scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(face = "bold"))
+
+data.frame(count_patient_return %>% count(n) %>% rename(number_of_returns = n, freq_patients_returning = nn))
+
+```
+
+We can see There is very few patients who returned more than once or twice, but we will not note them as an outlier yet.
+
+####The Program Table
+
+To investigate the `mrs_patient_program` table, I will create a new table, `df_program`, by joining the `mrs_program` so we can comprehensibly look at the different programs each patient is in. We want to look at the `mrs_patient_program` table before the `mrs_patient` table, because a patient could be enrolled in more than one program. However, I will add `gender` from the `mrs_patient` table so we can do some analysis by `gender`. In addtion, I will add a column which gives informatoin about how long they have been enrolled in the progam. I will also `df_encounter` table we created and flagg any `PEDS` as we have done in the previous table.
+
+```{r joing program info, echo=FALSE}
+
+df_program <- mrs_patient_program %>% 
+  left_join(y = mrs_program,
+            by = "program_id") %>%
+  mutate(yrs_enrolled = time_length(difftime(Sys.Date(), date_enrolled), "years")) %>%
+  left_join(., y = df_encounter %>%
+              mutate(encounter_type_name = gsub("RETURN|INITIAL", "", encounter_type_name)) %>%
+              distinct(patient_id, encounter_type_name),
+            by = "patient_id") %>%
+    left_join(., y = mrs_patient %>% select(patient_id, gender),
+            by = "patient_id")
+```
+
+In addiont, we can see just from the table that `r sum(is.na(mrs_patient_program$date_enrolled))/nrow(mrs_patient_program)` do not have an `enroll_date` and only `r sum(!is.na(df_program$date_completed))`. To keep our data consistent, we will flagg these items as outliers.
+
+```{r program outlires, echo=FALSE}
+
+df_program <- df_program %>%
+  mutate(outlier = ifelse(is.na(date_enrolled) | !is.na(date_completed), T, F))
+
+```
+
+From the observations we have not flagged, we can create a bar graph by `program_name`. From this graph we can see there are only `r nrow(df_program %>% filter(program_name == "TB Program" & outlier == F))`. This is not very many and we could probably filter out them out.
+
+```{r graph program, echo=FALSE}
+
+df_program %>% filter(outlier == F) %>%
+  count(program_name) %>%
+  ggplot(aes(x = program_name, y = n)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = comma(n)),
+            position = position_dodge(0.9),
+            vjust = -0.3) +
+  ggtitle("Count of Patients in Each Program") +
+  xlab("Program Name") +
+  ylab("Count in Program") + scale_y_continuous(labels = comma) +
+  theme(plot.title = element_text(face = "bold"))
+
+```
+
+
+From the `df_program` table, we can create, a table called `df_program_in` which identifes what programs a patient is in. This will help us flag patients in both programs as well as the TB program.
+
+```{r program in, echo=FALSE}
+
+df_program_in <- df_program %>%
+  count(patient_id, program_name) %>%
+  spread(key = program_name, value = n) %>%
+  mutate(program_in = ifelse(!is.na(`HIV Program`) & is.na(`TB Program`), "HIV Program",
+                             ifelse(is.na(`HIV Program`) & !is.na(`TB Program`), "TB Program",
+                                    ifelse(!is.na(`HIV Program`) & !is.na(`TB Program`), "Both Programs",
+                                           "Review")))) %>%
+  select(patient_id, program_in)
+
+data.frame(df_program_in %>% count(program_in))
+```
+
+*Please note, the above table includes the outliers whereas the above graph does not.*
+
+
+
+
+```{r gender v years enrolled, echo=FALSE}
+
+df_program <- df_program %>%
+  left_join(df_program_in, by = "patient_id") %>%
+  mutate(outlier = ifelse(program_in != "HIV Program", T, outlier))
+
+df_program %>% filter(outlier == F) %>%
+  ggplot(aes(x = gender, y = yrs_enrolled)) +
+  geom_boxplot() +
+  ggtitle("Years Enrolled by Gender") +
+  xlab("Gender") +
+  ylab("Years") +
+theme(plot.title = element_text(face = "bold"))
+
+```
+
+There are very few who have been enrolled in the program less than 10 years, so we will also flag them as an outlire. and print and output of how many observations we have left.
+
+```{r outlire addition, echo=FALSE}
+
+df_program <- df_program %>% mutate(outlier = ifelse(!is.na(yrs_enrolled) & yrs_enrolled < 10, T, outlier))
+
+data.frame(df_program %>% count(outlier))
+
+```
+
+
+
