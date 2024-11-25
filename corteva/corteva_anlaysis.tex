@@ -1,0 +1,389 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Corteva Case Intervew},
+  pdfauthor={Alex Brown},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+
+\title{Corteva Case Intervew}
+\author{Alex Brown}
+\date{3/26/2022}
+
+\begin{document}
+\maketitle
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(reticulate)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'reticulate' was built under R version 4.0.5
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tidyverse, }\DataTypeTok{quietly =}\NormalTok{ T)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
+\end{verbatim}
+
+\begin{verbatim}
+## v ggplot2 3.3.2     v purrr   0.3.4
+## v tibble  3.0.4     v dplyr   1.0.2
+## v tidyr   1.1.2     v stringr 1.4.0
+## v readr   1.4.0     v forcats 0.5.0
+\end{verbatim}
+
+\begin{verbatim}
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# import packages ----}
+
+\ImportTok{import}\NormalTok{ zipfile}
+\ImportTok{import}\NormalTok{ pandas }\ImportTok{as}\NormalTok{ pd}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# read-in/load ----}
+
+\NormalTok{zipped_folder }\OperatorTok{=} \StringTok{'C:/Users/abrow/Documents/GitHub/case_studies/corteva/cortevainterviewcasedataset.zip'}
+
+\CommentTok{# zip file handler  }
+\BuiltInTok{zip} \OperatorTok{=}\NormalTok{ zipfile.ZipFile(zipped_folder)}
+
+\NormalTok{files }\OperatorTok{=} \BuiltInTok{zip}\NormalTok{.namelist()}
+\CommentTok{# list available files in the container}
+\BuiltInTok{print}\NormalTok{(}\StringTok{'The files in cortevainterviewcasedataset.zip are:'}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## The files in cortevainterviewcasedataset.zip are:
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{print}\NormalTok{ (files)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## ['cortevainterviewcasedataset.csv']
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# extract a specific file from the zip container}
+\BuiltInTok{file} \OperatorTok{=} \BuiltInTok{zip}\NormalTok{.}\BuiltInTok{open}\NormalTok{(}\StringTok{'cortevainterviewcasedataset.csv'}\NormalTok{)}
+
+\NormalTok{df }\OperatorTok{=}\NormalTok{ pd.read_csv(}\BuiltInTok{file}\NormalTok{)}
+
+\CommentTok{# basic column info and stats}
+
+\BuiltInTok{print}\NormalTok{(df.info())}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## <class 'pandas.core.frame.DataFrame'>
+## RangeIndex: 3000000 entries, 0 to 2999999
+## Data columns (total 9 columns):
+##  #   Column         Dtype 
+## ---  ------         ----- 
+##  0   contactID      object
+##  1   IPAddress      object
+##  2   contactStatus  object
+##  3   timeStamp      object
+##  4   activityId     int64 
+##  5   WebUrl         object
+##  6   Referrer       object
+##  7   ActivityType   object
+##  8   Coordinates    object
+## dtypes: int64(1), object(8)
+## memory usage: 206.0+ MB
+## None
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{print}\NormalTok{(df.isna().}\BuiltInTok{sum}\NormalTok{())}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## contactID              0
+## IPAddress              0
+## contactStatus          0
+## timeStamp              0
+## activityId             0
+## WebUrl                 0
+## Referrer         1285279
+## ActivityType           0
+## Coordinates       602191
+## dtype: int64
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{print}\NormalTok{(df.groupby([}\StringTok{'contactStatus'}\NormalTok{]).size().reset_index(name}\OperatorTok{=}\StringTok{'counts'}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     contactStatus   counts
+## 0        Customer  1000152
+## 1  Known Prospect  1000447
+## 2         Unknown   999401
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{print}\NormalTok{(df.groupby([}\StringTok{'Referrer'}\NormalTok{]).size().reset_index(name}\OperatorTok{=}\StringTok{'counts'}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##         Referrer  counts
+## 0   Eloqua Email  857193
+## 1       Facebook  428609
+## 2  Google Search  428919
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{print}\NormalTok{(df.groupby([}\StringTok{'WebUrl'}\NormalTok{]).size().reset_index(name}\OperatorTok{=}\StringTok{'counts'}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                                                  WebUrl  counts
+## 0     http://10.207.11.226:4502//content/dam/dpagco/...     330
+## 1     http://10.207.11.226:4502/content/corteva/corp...     355
+## 2             http://10.226.141.196:4502/bin/wcmcommand     304
+## 3     http://10.226.141.228:4502/content/corteva/na/...     335
+## 4     http://10.226.71.228:4503/content/corteva/na/u...     327
+## ...                                                 ...     ...
+## 2074                       https://youtu.be/pecVtrAXbkQ     349
+## 2075                       https://youtu.be/tAQ2jFpfCSw     361
+## 2076                       https://youtu.be/vR3B9DuckMs     314
+## 2077                       https://youtu.be/vyTenDXHu44    2447
+## 2078                       https://youtu.be/x6yWmcV6-Uk     320
+## 
+## [2079 rows x 2 columns]
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# minor transforming }
+\NormalTok{df[[}\StringTok{'Latitude'}\NormalTok{,}\StringTok{'Longitue'}\NormalTok{]] }\OperatorTok{=}\NormalTok{ df.Coordinates.}\BuiltInTok{str}\NormalTok{.split(}\StringTok{","}\NormalTok{, expand}\OperatorTok{=}\VariableTok{True}\NormalTok{, n}\OperatorTok{=-}\DecValTok{1}\NormalTok{)}
+\NormalTok{df[[}\StringTok{'Latitude'}\NormalTok{,}\StringTok{'Longitue'}\NormalTok{]] }\OperatorTok{=}\NormalTok{ df[[}\StringTok{'Latitude'}\NormalTok{,}\StringTok{'Longitue'}\NormalTok{]].}\BuiltInTok{apply}\NormalTok{(pd.to_numeric, errors}\OperatorTok{=}\StringTok{'coerce'}\NormalTok{)}
+
+\BuiltInTok{print}\NormalTok{(df.head(}\DecValTok{15}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     contactID        IPAddress  ...  Latitude   Longitue
+## 0   EOO499157    136.94.170.42  ...       NaN        NaN
+## 1   EOO355635   252.195.39.208  ...       NaN        NaN
+## 2   EOO121395   165.241.78.219  ...  45.04080  -93.26300
+## 3   EOO266405   255.200.180.74  ...  40.68066  -73.47429
+## 4   EOO306884    84.48.210.117  ...       NaN        NaN
+## 5   EOO460379    30.54.180.118  ...  39.72943 -104.83192
+## 6    EOO12468     55.77.27.188  ...  32.42067 -104.22884
+## 7    EOO55850      123.70.7.58  ...  35.88264  -80.08199
+## 8   EOO192426    80.130.246.80  ...  39.43534  -84.20299
+## 9   EOO175290    178.95.65.138  ...  47.38093 -122.23484
+## 10  EOO475677      164.91.58.6  ...  41.67640  -91.58045
+## 11   EOO21374   81.238.199.253  ...  40.27370  -76.88442
+## 12  EOO260803       0.92.21.73  ...  33.72255 -116.37697
+## 13  EOO133727  141.242.179.201  ...  38.96372  -76.99081
+## 14  EOO130686    83.235.39.195  ...       NaN        NaN
+## 
+## [15 rows x 11 columns]
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{df.drop([}\StringTok{'Coordinates'}\NormalTok{], axis}\OperatorTok{=}\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##          contactID       IPAddress  ...  Latitude   Longitue
+## 0        EOO499157   136.94.170.42  ...       NaN        NaN
+## 1        EOO355635  252.195.39.208  ...       NaN        NaN
+## 2        EOO121395  165.241.78.219  ...  45.04080  -93.26300
+## 3        EOO266405  255.200.180.74  ...  40.68066  -73.47429
+## 4        EOO306884   84.48.210.117  ...       NaN        NaN
+## ...            ...             ...  ...       ...        ...
+## 2999995  EOO452872  205.201.241.23  ...  30.54270  -97.54667
+## 2999996  EOO193516   200.67.62.150  ...  41.72059  -87.70172
+## 2999997   EOO90549   45.144.116.49  ...  44.27804  -88.27205
+## 2999998  EOO278844   26.71.198.103  ...  47.38093 -122.23484
+## 2999999  EOO404140    10.76.163.79  ...       NaN        NaN
+## 
+## [3000000 rows x 10 columns]
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\BuiltInTok{print}\NormalTok{(df.head(}\DecValTok{15}\NormalTok{))}
+
+\CommentTok{# references }
+\CommentTok{# https://www.codegrepper.com/code-examples/python/how+to+read+zip+csv+file+in+python}
+\CommentTok{# https://stackoverflow.com/questions/26266362/how-to-count-the-nan-values-in-a-column-in-pandas-dataframe}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     contactID        IPAddress  ...  Latitude   Longitue
+## 0   EOO499157    136.94.170.42  ...       NaN        NaN
+## 1   EOO355635   252.195.39.208  ...       NaN        NaN
+## 2   EOO121395   165.241.78.219  ...  45.04080  -93.26300
+## 3   EOO266405   255.200.180.74  ...  40.68066  -73.47429
+## 4   EOO306884    84.48.210.117  ...       NaN        NaN
+## 5   EOO460379    30.54.180.118  ...  39.72943 -104.83192
+## 6    EOO12468     55.77.27.188  ...  32.42067 -104.22884
+## 7    EOO55850      123.70.7.58  ...  35.88264  -80.08199
+## 8   EOO192426    80.130.246.80  ...  39.43534  -84.20299
+## 9   EOO175290    178.95.65.138  ...  47.38093 -122.23484
+## 10  EOO475677      164.91.58.6  ...  41.67640  -91.58045
+## 11   EOO21374   81.238.199.253  ...  40.27370  -76.88442
+## 12  EOO260803       0.92.21.73  ...  33.72255 -116.37697
+## 13  EOO133727  141.242.179.201  ...  38.96372  -76.99081
+## 14  EOO130686    83.235.39.195  ...       NaN        NaN
+## 
+## [15 rows x 11 columns]
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{py}\OperatorTok{$}\NormalTok{df }\OperatorTok{%>%}\StringTok{ }\KeywordTok{glimpse}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Rows: 3,000,000
+## Columns: 11
+## $ contactID     <chr> "EOO499157", "EOO355635", "EOO121395", "EOO266405", "...
+## $ IPAddress     <chr> "136.94.170.42", "252.195.39.208", "165.241.78.219", ...
+## $ contactStatus <chr> "Unknown", "Known Prospect", "Customer", "Unknown", "...
+## $ timeStamp     <chr> "2020-01-05 00:00:36", "2020-01-05 00:00:56", "2020-0...
+## $ activityId    <dbl> 30000, 30001, 30002, 30003, 30004, 30005, 30006, 3000...
+## $ WebUrl        <chr> "https://www.pioneer.com/us/agronomy-science.html", "...
+## $ Referrer      <list> ["Google Search", "Eloqua Email", "Eloqua Email", "F...
+## $ ActivityType  <chr> "PageView", "PageView", "PageView", "PageView", "Page...
+## $ Coordinates   <list> [NaN, NaN, "45.0408,-93.263", "40.68066,-73.47429", ...
+## $ Latitude      <dbl> NaN, NaN, 45.04080, 40.68066, NaN, 39.72943, 32.42067...
+## $ Longitue      <dbl> NaN, NaN, -93.26300, -73.47429, NaN, -104.83192, -104...
+\end{verbatim}
+
+\end{document}
